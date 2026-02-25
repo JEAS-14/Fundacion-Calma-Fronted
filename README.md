@@ -1,59 +1,70 @@
-# FundacionCalma
+# 🌐 Fundación Calma - Sistema de Gestión Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.5.
+Sistema web modular para la gestión integral de la Fundación Calma. Diseñado con **Arquitectura Modular Monolítica** escalable a microservicios, siguiendo principios de **Clean Architecture** y preparado para evolucionar a **Micro-Frontends**.
 
-## Development server
+## 🎯 Visión del Proyecto
 
-To start a local development server, run:
+**Fase Actual (MVP):** Sistema monolítico con 1 módulo (Comercial)  
+**Fase Futura:** 9 módulos independientes, escalables a microservicios
 
-```bash
-ng serve
-```
+### 🏢 Áreas Funcionales (9 Módulos Planificados)
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+1. ✅ **Comercial** - Clientes, ventas, cotizaciones *(En desarrollo)*
+2. 📚 **Académico** - Cursos, estudiantes, programas
+3. 💰 **Financiero** - Contabilidad, presupuestos, reportes
+4. 👥 **RRHH** - Recursos humanos, nómina, empleados
+5. 📦 **Logística** - Inventario, almacén, compras
+6. 🎯 **Proyectos** - Gestión de proyectos sociales
+7. 🤝 **Beneficiarios** - Registro y seguimiento
+8. 📢 **Comunicaciones** - Marketing, campañas
+9. ⚙️ **Administración** - Configuración, usuarios, permisos
 
-## Code scaffolding
+## 🚀 Tecnologías Principales
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+* **Framework:** Angular v20+ (Standalone Components, Signals)
+* **Estilos:** SCSS (Sass) - Encapsulado por componente
+* **Gestor de Paquetes:** npm
+* **Entorno de Ejecución:** Node.js v20+
+* **Arquitectura:** Modular Monolith + Hexagonal (por módulo)
 
-```bash
-ng generate component component-name
-```
+## 🛠️ Configuración del Entorno (Para nuevos devs)
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Si acabas de clonar el repositorio, sigue estos pasos en estricto orden:
 
-```bash
-ng generate --help
-```
+1.  **Instalar dependencias:**
+    ```bash
+    npm install
+    ```
 
-## Building
+2.  **Configurar variables de entorno:**
+    * Angular maneja las variables en la carpeta `src/environments/`.
+    * Asegúrate de que el archivo `environment.development.ts` apunte a la API local de NestJS (usualmente `http://localhost:3000`).
 
-To build the project run:
+3.  **Levantar el servidor de desarrollo:**
+    ```bash
+    ng serve -o
+    ```
+    *(El flag `-o` abrirá automáticamente la aplicación en tu navegador).*
 
-```bash
-ng build
-```
+## ⚡ Comandos de Uso Diario
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+💻 **Angular CLI (Desarrollo)**
 
-## Running unit tests
+* `ng serve` -> Arranca el servidor local con recarga automática.
+* `ng build` -> Compila el proyecto para producción (crea la carpeta `dist/`).
+* `ng generate component nombre-componente` -> Crea un nuevo componente rápidamente (o `ng g c nombre-componente`).
+* `ng generate service nombre-servicio` -> Crea un nuevo servicio (o `ng g s nombre-servicio`).
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## 📂 Arquitectura del Proyecto (Hexagonal / Feature-Sliced)
 
-```bash
-ng test
-```
+Para mantener el orden a medida que el proyecto crece, el código dentro de `src/app/` se divide estrictamente en 3 grandes bloques:
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```text
+src/app/
+├── core/                 # ⚙️ Núcleo: Interceptores, Guards, Servicios globales (Auth genérico).
+├── shared/               # 🧩 Reutilizables: Botones, Modales, Tarjetas, Pipes genéricos.
+└── features/             # 🏢 Módulos de Negocio (Ej: Autenticación, Ventas, Usuarios)
+    └── [nombre-feature]/ # Cada módulo aplica Arquitectura Hexagonal internamente:
+        ├── domain/       # 🧠 Modelos (Interfaces TypeScript) y Puertos (Interfaces de Repositorios). Nada de Angular aquí.
+        ├── infra/        # 🔌 Adaptadores: Servicios HTTP que conectan con NestJS. Implementan los Puertos del domain.
+        └── presentation/ # 🎨 Vistas y Componentes: Pages completas y componentes visuales específicos de este módulo.z
