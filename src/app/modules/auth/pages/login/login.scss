@@ -1,0 +1,42 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f4f7f6;
+}
+
+.login-box {
+  background: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+
+  h2 { color: #2c3e50; margin-bottom: 5px; }
+  p { color: #7f8c8d; margin-bottom: 20px; }
+
+  .form-group {
+    text-align: left;
+    margin-bottom: 15px;
+    
+    label { display: block; font-weight: bold; margin-bottom: 5px; color: #34495e;}
+    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+  }
+
+  button {
+    width: 100%;
+    padding: 10px;
+    background-color: #009688; // Color principal de ejemplo
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+
+    &:hover { background-color: #00796b; }
+  }
+}
