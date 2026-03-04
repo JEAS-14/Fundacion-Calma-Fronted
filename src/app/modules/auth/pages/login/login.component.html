@@ -1,18 +1,29 @@
-<div class="login-container">
-  <div class="login-box">
-    <h2>Fundación Calma</h2>
-    <p>Inicia sesión en tu cuenta</p>
+<div class="login-screen">
+  <div class="overlay"></div>
 
-    <div class="form-group">
-      <label>Correo Electrónico</label>
-      <input type="email" placeholder="ejemplo@calma.org">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="logo-placeholder"></div>
+
+      <p>Plataforma Institucional</p>
+
+      <div class="form-container">
+        <div class="input-group">
+          <label>Correo Institucional</label>
+          <input type="email" pInputText placeholder="correo@gmail.com" [(ngModel)]="email">
+        </div>
+
+        <div class="input-group">
+          <label>Contraseña</label>
+          <p-password [feedback]="false" [toggleMask]="true" placeholder="********" [(ngModel)]="password"></p-password>
+        </div>
+
+        <button class="btn-login" (click)="onLogin()">INGRESAR</button>
+      </div>
+
+      <a href="#" class="forgot-pass">¿Olvidaste tu contraseña?</a>
+
+      <p>© 2026 Fundación Calma</p>
     </div>
-
-    <div class="form-group">
-      <label>Contraseña</label>
-      <input type="password" placeholder="********">
-    </div>
-
-    <button>Ingresar</button>
   </div>
 </div>

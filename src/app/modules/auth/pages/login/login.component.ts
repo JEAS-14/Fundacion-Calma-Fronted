@@ -1,12 +1,64 @@
-import { Component } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+import { Router } from '@angular/router'
+import { FormsModule } from '@angular/forms'; 
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
-  standalone: true, // <--- Esto es vital en Angular 18
-  imports: [CommonModule, ButtonModule],
-  templateUrl: './login.component.html', // Verifica que el archivo sea .html
-  styleUrls: ['./login.component.scss']   // Verifica que el archivo sea .scss
+  standalone: true,
+  imports: [CommonModule, InputTextModule, PasswordModule, FormsModule],
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class LoginComponent { }
+export class LoginComponent {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  email = '';
+  password = '';
+
+  onLogin() {
+    if (!this.email || !this.password) {
+      alert('Por favor, ingresa tu correo y contraseña');
+      return;
+    }
+
+    console.log("🔄 Intentando login...");
+    
+    this.authService.login(this.email, this.password).subscribe({
+      next: (respuesta) => {
+        console.log("✅ Respuesta del backend:", respuesta);
+        
+        const rol = respuesta.usuario?.rol;
+        console.log("🎯 Rol detectado:", rol);
+        
+        // Redirigir según el rol
+        if (rol === 'Director' || rol === 'admin') {
+          console.log("👑 Redirigiendo a /dashboard/admin");
+          this.router.navigate(['/dashboard/admin']).then(success => {
+            console.log("✅ Navegación exitosa:", success);
+          });
+        } else {
+          console.log("👤 Redirigiendo a /dashboard/usuario");
+          this.router.navigate(['/dashboard/usuario']).then(success => {
+            console.log("✅ Navegación exitosa:", success);
+          });
+        }
+      },
+      error: (error) => {
+        console.error("❌ Error:", error);
+        if (error.status === 0) {
+          alert('❌ No se puede conectar al backend');
+        } else if (error.status === 401) {
+          alert('❌ Credenciales incorrectas');
+        } else {
+          alert(`❌ Error ${error.status}`);
+        }
+      }
+    });
+  }
+}

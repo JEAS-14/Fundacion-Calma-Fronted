@@ -1,2 +1,27 @@
-/* Estilos globales */
+/* src/styles.scss */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 @import "primeicons/primeicons.css";
+
+:root {
+  /* Colores solicitados */
+  --primary-btn: #4EB3E4;
+  --primary-hover: #3a9bc9;
+  --text-white: #FFFFFF;
+  
+  /* Variables de imagen (Aquí pondrás tus links) */
+  --bg-image-url: url('https://res.cloudinary.com/dtozni6ik/image/upload/v1772558448/TECNOLOG%C3%8DA_3_kqhjux.png');
+  --logo-image-url: url('https://res.cloudinary.com/dtozni6ik/image/upload/v1772558448/Logo_Calma_ltt1yp.png');
+
+  --font-family: 'Inter', sans-serif;
+  --font-navbar: 'Inter', sans-serif;
+  --font-layout: 'Inria Sans', sans-serif;
+  --bg-admin: #F4F7F9;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  font-family: var(--font-layout); 
+  background-color: var(--bg-admin);
+}

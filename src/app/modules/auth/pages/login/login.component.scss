@@ -1,42 +1,129 @@
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* Contenedor principal con la imagen de fondo */
+.login-screen {
+  position: relative;
   height: 100vh;
-  background-color: #f4f7f6;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: var(--bg-image-url); /* Recuerda poner tu link en styles.scss */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #000000;
 }
 
-.login-box {
-  background: white;
-  padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+/* Envoltorio de la tarjeta */
+.login-container {
+  z-index: 10;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  padding: 20px;
+}
+
+/* La tarjeta blanca central */
+.login-card {
+  background: #FFFFFF;
+  padding: 40px 35px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   text-align: center;
+  color: #333333;
 
-  h2 { color: #2c3e50; margin-bottom: 5px; }
-  p { color: #7f8c8d; margin-bottom: 20px; }
-
-  .form-group {
-    text-align: left;
-    margin-bottom: 15px;
-    
-    label { display: block; font-weight: bold; margin-bottom: 5px; color: #34495e;}
-    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+  /* El logo posicionado correctamente dentro de la tarjeta */
+  .logo-placeholder {
+    display: block;
+    margin: 0 auto 20px; /* Centrado a los lados, 20px de espacio abajo */
+    width: 100%;
+    max-width: 220px;
+    height: 120px;
+    background-image: var(--logo-image-url); /* Recuerda poner tu link en styles.scss */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
   }
 
-  button {
-    width: 100%;
-    padding: 10px;
-    background-color: #009688; // Color principal de ejemplo
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-    margin-top: 10px;
+  /* Ajustes de tamaño del logo para móviles */
+  @media (max-width: 768px) {
+    .logo-placeholder {
+      max-width: 180px;
+      height: 100px;
+    }
+  }
 
-    &:hover { background-color: #00796b; }
+  @media (max-width: 480px) {
+    .logo-placeholder {
+      max-width: 150px;
+      height: 80px;
+    }
+  }
+
+  /* Textos de la tarjeta */
+  h2 { font-weight: 700; margin-bottom: 5px; font-size: 26px; color: #111827; }
+  p { font-size: 14px; margin-bottom: 30px; color: #6b7280; }
+}
+
+/* Contenedor de cada input y su label */
+.input-group {
+  text-align: left;
+  margin-bottom: 20px;
+  
+  label { 
+    display: block; 
+    margin-bottom: 8px; 
+    font-weight: 600; 
+    font-size: 13px; 
+    color: #4b5563; 
+  }
+}
+
+/* Tu botón azul exacto */
+.btn-login {
+  width: 100%;
+  padding: 14px;
+  background-color: #4EB3E4; /* Color principal */
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 10px;
+
+  &:hover { background-color: #3a9bc9; } /* Color un poco más oscuro al pasar el mouse */
+}
+
+/* Enlace de olvidar contraseña */
+.forgot-pass {
+  display: block;
+  margin-top: 20px;
+  color: #4EB3E4;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+/* Forzar los estilos de PrimeNG para que queden perfectos dentro de la tarjeta */
+:host ::ng-deep {
+  .p-inputtext, .p-password input {
+    width: 100% !important;
+    background: #f9fafb !important;
+    color: #333333 !important; 
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+    box-sizing: border-box;
+  }
+  
+  .p-password {
+    width: 100%;
+    display: block;
+  }
+  
+  .p-password-icon {
+    right: 15px;
+    color: #6b7280;
   }
 }
