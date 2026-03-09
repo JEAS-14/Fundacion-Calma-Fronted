@@ -1,11 +1,49 @@
 <div class="layout-wrapper">
-  
-  <app-sidebar></app-sidebar> 
 
+  <!-- SIDEBAR -->
+  <app-sidebar></app-sidebar>
+
+  <!-- AREA PRINCIPAL -->
   <main class="layout-main">
-    <div class="content-area">
+
+    <!-- HEADER GLOBAL -->
+    <header class="header">
+
+      <!-- BUSCADOR -->
+      <div class="search-bar">
+        <i class="pi pi-search"></i>
+        <input type="text" placeholder="Buscar Recursos, reportes o personal..." />
+      </div>
+
+      <!-- AREA DERECHA -->
+      <div class="header-right">
+
+        <!-- NOTIFICACIONES -->
+        <i class="pi pi-bell notification"></i>
+
+        <!-- USUARIO -->
+        <div class="user-info">
+
+          <div class="user-text">
+            <strong>Deivi Flores</strong>
+            <span>Dir. de Estrategia y Desarrollo Comercial</span>
+          </div>
+
+          <div class="avatar">
+            DF
+          </div>
+
+        </div>
+
+      </div>
+
+    </header>
+
+    <!-- CONTENIDO DE LAS PAGINAS -->
+    <section class="content-area">
       <router-outlet></router-outlet>
-    </div>
+    </section>
+
   </main>
 
 </div>

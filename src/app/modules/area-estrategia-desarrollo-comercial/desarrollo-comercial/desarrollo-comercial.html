@@ -1,0 +1,340 @@
+﻿<div class="page-container">
+  <header class="page-header">
+    <h2 class="page-title">Desarrollo Comercial</h2>
+    <p class="page-subtitle">Gestión de convenios</p>
+  </header>
+
+  <div class="top-actions">
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="busqueda"
+        (input)="onBuscar()"
+        placeholder="Buscar convenios........."
+      />
+    </div>
+
+    <button class="btn-nuevo" (click)="crearNuevoConvenio()">
+      <i class="pi pi-plus"></i>
+      Nuevo Convenio
+    </button>
+  </div>
+
+  <div class="filters">
+    <button
+      class="chip pendiente"
+      [class.active]="estadoSeleccionado === 'pendiente'"
+      (click)="setFiltro('pendiente')"
+    >
+      <i class="pi pi-clock"></i><span>PENDIENTE</span>
+    </button>
+    <button
+      class="chip proceso"
+      [class.active]="estadoSeleccionado === 'proceso'"
+      (click)="setFiltro('proceso')"
+    >
+      <i class="pi pi-spinner"></i><span>EN PROCESO</span>
+    </button>
+    <button
+      class="chip convenio"
+      [class.active]="estadoSeleccionado === 'convenio'"
+      (click)="setFiltro('convenio')"
+    >
+      <i class="pi pi-briefcase"></i><span>PROCESO DE CONVENIO</span>
+    </button>
+    <button
+      class="chip reunion"
+      [class.active]="estadoSeleccionado === 'reunion'"
+      (click)="setFiltro('reunion')"
+    >
+      <i class="pi pi-calendar-plus"></i><span>REUNIÓN AGENDADA</span>
+    </button>
+    <button
+      class="chip firmado"
+      [class.active]="estadoSeleccionado === 'firmado'"
+      (click)="setFiltro('firmado')"
+    >
+      <i class="pi pi-check-circle"></i><span>CONVENIO FIRMADO</span>
+    </button>
+    <button
+      class="chip cancelado"
+      [class.active]="estadoSeleccionado === 'cancelado'"
+      (click)="setFiltro('cancelado')"
+    >
+      <i class="pi pi-ban"></i><span>CANCELADO</span>
+    </button>
+  </div>
+
+  <div class="convenios-list">
+    <div
+      class="convenio-card"
+      *ngFor="let convenio of conveniosFiltrados"
+      [ngClass]="convenio.estado"
+      (click)="abrirDetalle(convenio)"
+    >
+      <div class="card-content">
+        <div class="card-left">
+          <div class="logo-inst" [style.background]="convenio.color">
+            <img
+              *ngIf="convenio.logo; else siglas"
+              [src]="convenio.logo"
+              [alt]="convenio.nombre"
+            />
+            <ng-template #siglas>
+              {{ convenio.siglas }}
+            </ng-template>
+          </div>
+
+          <div class="card-info">
+            <h4>{{ convenio.nombre }}</h4>
+            <div class="fecha">
+              <i class="pi pi-calendar"></i>
+              <span>Vence: {{ convenio.fecha }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-actions">
+          <span class="status" [ngClass]="convenio.estado">
+            <i class="pi pi-clock" *ngIf="convenio.estado === 'pendiente'"></i>
+            <i class="pi pi-spinner" *ngIf="convenio.estado === 'proceso'"></i>
+            <i class="pi pi-briefcase" *ngIf="convenio.estado === 'convenio'"></i>
+            <i class="pi pi-calendar-plus" *ngIf="convenio.estado === 'reunion'"></i>
+            <i class="pi pi-check-circle" *ngIf="convenio.estado === 'firmado'"></i>
+            <i class="pi pi-ban" *ngIf="convenio.estado === 'cancelado'"></i>
+            {{ convenio.estadoLabel }}
+          </span>
+          <button
+            class="icon-btn ghost danger small"
+            title="Eliminar convenio"
+            (click)="pedirConfirmarEliminacion(convenio, $event)"
+          >
+            <i class="pi pi-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal detalle -->
+  <div class="modal-backdrop" *ngIf="convenioSeleccionado">
+    <div class="modal-card">
+      <header class="modal-bar">
+        <ng-container *ngIf="convenioSeleccionado.logo; else logoPlaceholder">
+          <div class="modal-logo">
+            <img
+              [src]="convenioSeleccionado.logo"
+              [alt]="convenioSeleccionado.nombre"
+            />
+            <button
+              *ngIf="editMode"
+              class="logo-remove"
+              (click)="eliminarLogo()"
+              type="button"
+              title="Quitar logo"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+        </ng-container>
+        <ng-template #logoPlaceholder>
+          <div class="modal-logo placeholder" (click)="editMode && abrirLogo()">
+            <span>+ Adjuntar logo</span>
+          </div>
+        </ng-template>
+        <div class="title-cell">
+          <h3>{{ convenioSeleccionado.nombre || 'Nuevo Convenio' }}</h3>
+        </div>
+        <button class="close-btn" (click)="cerrarDetalle()" title="Cerrar">
+          <i class="pi pi-times"></i>
+        </button>
+      </header>
+
+      <div class="modal-content" [class.single-column]="esNuevo">
+        <section class="info-panel">
+          <div class="panel-head" *ngIf="!esNuevo">
+            <h4>Información General</h4>
+            <button
+              class="icon-btn"
+              (click)="habilitarEdicion()"
+              [class.active]="editMode"
+              title="Editar"
+            >
+              <i class="pi pi-pencil"></i>
+            </button>
+          </div>
+          <div class="logo-actions" *ngIf="editMode">
+            <button class="link-btn" (click)="logoInput.click()" title="Subir logo">
+              <i class="pi pi-upload"></i>
+              <span *ngIf="esNuevo">Adjuntar logo</span>
+            </button>
+            <input
+              #logoInput
+              type="file"
+              class="file-hidden"
+              accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+              (change)="onLogoSeleccionado($event)"
+            />
+          </div>
+          <div class="info-grid">
+            <div>
+              <span class="label">Nombre de Institución</span>
+              <ng-container *ngIf="!editMode; else nombreInstEdit">
+                <p>{{ convenioSeleccionado.nombre || '-' }}</p>
+              </ng-container>
+              <ng-template #nombreInstEdit>
+                <input type="text" [(ngModel)]="convenioSeleccionado.nombre" placeholder="Nombre de institución" />
+              </ng-template>
+            </div>
+            <div>
+              <span class="label">RUC</span>
+              <ng-container *ngIf="!editMode; else rucEdit">
+                <p>{{ convenioSeleccionado.ruc || '00000000' }}</p>
+              </ng-container>
+              <ng-template #rucEdit>
+                <input type="text" [(ngModel)]="convenioSeleccionado.ruc" placeholder="RUC" />
+              </ng-template>
+            </div>
+            <div>
+              <span class="label">Estado</span>
+              <ng-container *ngIf="!editMode; else estadoEdit">
+                <span class="status" [ngClass]="convenioSeleccionado.estado">
+                  {{ convenioSeleccionado.estadoLabel }}
+                </span>
+              </ng-container>
+              <ng-template #estadoEdit>
+                <select [(ngModel)]="convenioSeleccionado.estado">
+                  <option *ngFor="let est of estadosDisponibles" [value]="est">
+                    {{ labelEstado(est) }}
+                  </option>
+                </select>
+              </ng-template>
+            </div>
+            <div>
+              <span class="label">Fecha expiración</span>
+              <ng-container *ngIf="!editMode; else fechaEdit">
+                <p>{{ convenioSeleccionado.fecha || 'dd/mm/aaaa' }}</p>
+              </ng-container>
+              <ng-template #fechaEdit>
+                <input type="date" [(ngModel)]="convenioSeleccionado.fecha" />
+              </ng-template>
+            </div>
+            <div>
+              <span class="label">Rubro</span>
+              <ng-container *ngIf="!editMode; else rubroEdit">
+                <p>{{ convenioSeleccionado.rubro || '-' }}</p>
+              </ng-container>
+              <ng-template #rubroEdit>
+                <input type="text" [(ngModel)]="convenioSeleccionado.rubro" placeholder="Rubro" />
+              </ng-template>
+            </div>
+            <div>
+              <span class="label">Contacto</span>
+              <ng-container *ngIf="!editMode; else contactoEdit">
+                <p>{{ convenioSeleccionado.contacto || '-' }}</p>
+              </ng-container>
+              <ng-template #contactoEdit>
+                <input type="text" [(ngModel)]="convenioSeleccionado.contacto" placeholder="Contacto" />
+              </ng-template>
+            </div>
+            <div>
+              <span class="label">Número de contacto</span>
+              <ng-container *ngIf="!editMode; else telefonoEdit">
+                <p>{{ convenioSeleccionado.telefono || '-' }}</p>
+              </ng-container>
+              <ng-template #telefonoEdit>
+                <input type="text" [(ngModel)]="convenioSeleccionado.telefono" placeholder="Número de contacto" />
+              </ng-template>
+            </div>
+          </div>
+          <button class="attach-btn" *ngIf="convenioSeleccionado && !convenioSeleccionado.archivoAdjunto" (click)="fileInput.click()">
+            <i class="pi pi-paperclip"></i>
+            Adjuntar archivo
+          </button>
+          <input
+            #fileInput
+            type="file"
+            class="file-hidden"
+            accept=".pdf,application/pdf"
+            (change)="onArchivoSeleccionado($event)"
+          />
+          <div
+            class="attachment-preview"
+            *ngIf="convenioSeleccionado && convenioSeleccionado.archivoAdjunto"
+            [class.expand]="editMode"
+          >
+            <button class="file-chip" type="button" (click)="verArchivo()" title="Ver PDF">
+              <i class="pi pi-file-pdf"></i>
+            </button>
+            <button
+              class="icon-btn ghost danger"
+              type="button"
+              *ngIf="editMode"
+              (click)="eliminarArchivo()"
+              title="Eliminar archivo"
+            >
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+        </section>
+
+        <aside class="comments-panel" *ngIf="!esNuevo">
+          <h4>Comentarios</h4>
+
+          <div class="comments-list">
+            <div class="comment-box" *ngFor="let c of convenioSeleccionado.comentarios">
+              <p class="comment-text">{{ c }}</p>
+            </div>
+            <div class="comment-box" *ngIf="!(convenioSeleccionado.comentarios?.length)">
+              <p class="placeholder">Sin comentarios aún</p>
+            </div>
+          </div>
+
+          <textarea
+            [(ngModel)]="nuevoComentario"
+            placeholder="Escribir comentario...."
+          ></textarea>
+          <button class="add-comment" (click)="agregarComentario()" [disabled]="!nuevoComentario.trim()">
+            <i class="pi pi-plus"></i>
+            Agregar Comentario
+          </button>
+        </aside>
+          <section class="history-panel" *ngIf="!esNuevo">
+            <div class="panel-head">
+              <h4>Historial</h4>
+            </div>
+            <div class="history-body">
+              <ul>
+                <li *ngFor="let evento of convenioSeleccionado.historial">
+                  <i class="pi pi-clock"></i> {{ evento }}
+                </li>
+                <li *ngIf="!(convenioSeleccionado.historial?.length)">
+                  Sin registros
+                </li>
+              </ul>
+            </div>
+          </section>
+      </div>
+
+      <div class="modal-actions" *ngIf="editMode">
+        <button class="save-btn" (click)="guardarEdicion()">{{ esNuevo ? 'Agregar Convenio' : 'Guardar cambios' }}</button>
+        <button class="cancel-btn" (click)="esNuevo ? cerrarDetalle() : (editMode = false)">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmación de eliminación -->
+<div class="confirm-overlay" *ngIf="convenioPorEliminar">
+  <div class="confirm-card">
+    <h4>¿Eliminar convenio?</h4>
+    <p>¿Estás seguro de que deseas eliminar el convenio "{{ convenioPorEliminar.nombre || 'Nombre del convenio' }}"?</p>
+    <p class="muted">Esta acción no se puede deshacer.</p>
+    <div class="confirm-actions">
+      <button class="cancel-btn" (click)="cancelarEliminacion()">Cancelar</button>
+      <button class="delete-btn" (click)="confirmarEliminacion()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+
