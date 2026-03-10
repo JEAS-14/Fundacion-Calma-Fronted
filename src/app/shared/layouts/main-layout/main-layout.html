@@ -1,11 +1,19 @@
 <div class="layout-wrapper">
-  
-  <app-sidebar></app-sidebar> 
 
+  <!-- SIDEBAR -->
+  <app-sidebar></app-sidebar>
+
+  <!-- AREA PRINCIPAL -->
   <main class="layout-main">
-    <div class="content-area">
+
+    <!-- HEADER GLOBAL -->
+    <app-navbar></app-navbar>
+
+    <!-- CONTENIDO DE LAS PAGINAS -->
+    <section class="content-area">
       <router-outlet></router-outlet>
-    </div>
+    </section>
+
   </main>
 
 </div>

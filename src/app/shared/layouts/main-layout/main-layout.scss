@@ -1,19 +1,23 @@
 .layout-wrapper {
   display: flex;
   height: 100vh;
-  width: 100vw;
+  width: 100%;
+  background: #f5f6f8;
   overflow: hidden;
-  background-color: var(--bg-admin);
+  /* evita que el header se salga */
 }
 
 .layout-main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  
-  .content-area {
-    padding: 30px;
-    /* Aquí actuará la fuente Inria Sans que pusimos en el body global */
-  }
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* CONTENIDO */
+.content-area {
+  flex: 1;
+  padding: 0; 
+  overflow: visible;
 }

@@ -1,20 +1,161 @@
-<aside class="app-sidebar">
-  <div class="sidebar-header">
-    <div class="logo-placeholder"></div>
-    <h2 class="brand-text">Fundación Calma</h2>
-  </div>
+<div class="sidebar-header">
+  <img src="assets/logo-calma.png" alt="Logo Calma" class="logo">
+</div>
 
-  <nav class="sidebar-menu">
-    <ul class="menu-list">
-      <li class="menu-item active"><i class="pi pi-home"></i> Inicio</li>
-      <li class="menu-item"><i class="pi pi-users"></i> Usuarios</li>
-      <li class="menu-item"><i class="pi pi-briefcase"></i> Áreas</li>
+<div class="menu-title">MENÚ PRINCIPAL</div>
+
+<ul class="menu-list">
+
+  <li class="menu-item">
+    <a routerLink="/dashboard/usuario" routerLinkActive="active">
+      <i class="pi pi-th-large"></i>
+      Dashboard
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/comunicaciones" routerLinkActive="active">
+      <i class="pi pi-comments"></i>
+      Comunicaciones
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/comunidad-calma" routerLinkActive="active">
+      <i class="pi pi-users"></i>
+      Comunidad Calma
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/repositorio" routerLinkActive="active">
+      <i class="pi pi-folder"></i>
+      Repositorio
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/salas-trabajo" routerLinkActive="active">
+      <i class="pi pi-video"></i>
+      Salas de Trabajo
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/notificaciones" routerLinkActive="active">
+      <i class="pi pi-bell"></i>
+      Notificaciones
+    </a>
+  </li>
+
+</ul>
+
+<div class="menu-title">ÁREAS</div>
+
+<ul class="menu-list">
+
+  <li class="menu-item parent">
+
+    <div class="menu-parent" (click)="toggleComercial()" [class.active-parent]="isComercialOpen">
+
+      <div class="menu-left">
+        <i class="pi pi-chart-line"></i>
+        <span>Estrategia y Desarrollo Comercial</span>
+      </div>
+
+      <i class="pi" [ngClass]="isComercialOpen ? 'pi-chevron-up' : 'pi-chevron-down'">
+      </i>
+
+    </div>
+
+    <ul class="submenu" *ngIf="isComercialOpen">
+
+      <li>
+        <a routerLink="/dashboard/comercial/estrategia-comercial" routerLinkActive="active">
+          <i class="pi pi-compass"></i>
+          Estrategia Comercial
+        </a>
+      </li>
+
+      <li>
+        <a routerLink="/dashboard/comercial/analisis-datos" routerLinkActive="active">
+          <i class="pi pi-chart-bar"></i>
+          Análisis de Datos
+        </a>
+      </li>
+
+      <li>
+        <a routerLink="/dashboard/comercial/desarrollo-comercial" routerLinkActive="active">
+          <i class="pi pi-cog"></i>
+          Desarrollo Comercial
+        </a>
+      </li>
+
     </ul>
-  </nav>
 
-  <div class="sidebar-footer">
-    <button class="btn-logout" (click)="cerrarSesion()">
-      <i class="pi pi-sign-out"></i> Salir
-    </button>
-  </div>
-</aside>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/clinica-calma" routerLinkActive="active">
+      <i class="pi pi-heart"></i>
+      Clínica Calma
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/suyay" routerLinkActive="active">
+      <i class="pi pi-star"></i>
+      Suyay
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/brave-up" routerLinkActive="active">
+      <i class="pi pi-shield"></i>
+      Brave Up
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/recursos-humanos" routerLinkActive="active">
+      <i class="pi pi-users"></i>
+      Recursos Humanos
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/educalma" routerLinkActive="active">
+      <i class="pi pi-book"></i>
+      EduCalma
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/marketing" routerLinkActive="active">
+      <i class="pi pi-bullseye"></i>
+      Marketing
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/tecnologia" routerLinkActive="active">
+      <i class="pi pi-cog"></i>
+      Tecnología
+    </a>
+  </li>
+
+  <li class="menu-item">
+    <a routerLink="/control-calidad" routerLinkActive="active">
+      <i class="pi pi-check-circle"></i>
+      Control y Calidad
+    </a>
+  </li>
+
+</ul>
+
+<div class="logout-container">
+  <a routerLink="/logout" class="logout-btn">
+    <i class="pi pi-sign-out"></i>
+    Cerrar Sesión
+  </a>
+</div>

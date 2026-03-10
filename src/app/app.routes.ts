@@ -2,52 +2,85 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './modules/auth/pages/login/login.component';
 import { LogoutComponent } from './modules/auth/pages/logout/logout.component';
 import { authGuard, adminGuard } from './core/guards/auth.guard';
-import { DashboardComponent } from './shared/layouts/dashboard/dashboard.component';
-import { AdminDashboardComponent } from './shared/layouts/dashboard/pages/admin/admin.component';
-import { UserDashboardComponent } from './shared/layouts/dashboard/pages/user/user.component';
+import { AdminDashboardComponent } from './modules/dashboard/pages/admin/admin.component';
+import { UserDashboardComponent } from './modules/dashboard/pages/user/user.component';
+import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout';
+
+// Nuevos componentes importados
+import { ComunicacionesComponent } from './modules/comunicaciones/pages/comunicaciones/comunicaciones.component';
+import { ComunidadComponent } from './modules/comunidad/pages/comunidad/comunidad.component';
+import { RepositorioComponent } from './modules/repositorio/pages/repositorio/repositorio.component';
+import { SalasTrabajoComponent } from './modules/salas-trabajo/pages/salas-trabajo/salas-trabajo.component';
+import { NotificacionesComponent } from './modules/notificaciones/pages/notificaciones/notificaciones.component';
 
 export const routes: Routes = [
   // 1. Redirigir raíz al login
   { path: '', redirectTo: 'login', pathMatch: 'full' },
-  
+
   // 2. Login (sin protección)
   { path: 'login', component: LoginComponent },
   { path: 'logout', component: LogoutComponent },
 
   // 3. Dashboard protegido con el layout
   {
-    path: 'dashboard',
-    component: DashboardComponent,
+    path: '',
+    component: MainLayoutComponent,
     canActivate: [authGuard],
     children: [
-      // Dashboard de Admin (solo admins)
       {
-        path: 'admin',
-        component: AdminDashboardComponent,
-        canActivate: [adminGuard]
+        path: 'dashboard',
+        children: [
+          // Dashboard de Admin (solo admins)
+          {
+            path: 'admin',
+            component: AdminDashboardComponent,
+            canActivate: [adminGuard],
+          },
+          // Dashboard de Usuario (cualquier usuario autenticado)
+          {
+            path: 'usuario',
+            component: UserDashboardComponent,
+            canActivate: [authGuard],
+          },
+          {
+            path: 'comercial',
+            loadChildren: () =>
+              import('./modules/area-estrategia-desarrollo-comercial/comercial.routes').then(
+                (m) => m.COMERCIAL_ROUTES,
+              ),
+          },
+          // Redirigir dashboard raíz según el rol
+          {
+            path: '',
+            redirectTo: 'usuario',
+            pathMatch: 'full',
+          },
+        ]
       },
-      // Dashboard de Usuario (cualquier usuario autenticado)
+      // Nuevas rutas agregadas del Sidebar
       {
-        path: 'usuario',
-        component: UserDashboardComponent,
-        canActivate: [authGuard]
+        path: 'comunicaciones',
+        component: ComunicacionesComponent
       },
-      // Redirigir dashboard raíz según el rol
       {
-        path: '',
-        redirectTo: 'usuario',
-        pathMatch: 'full'
+        path: 'comunidad-calma',
+        component: ComunidadComponent
+      },
+      {
+        path: 'repositorio',
+        component: RepositorioComponent
+      },
+      {
+        path: 'salas-trabajo',
+        component: SalasTrabajoComponent
+      },
+      {
+        path: 'notificaciones',
+        component: NotificacionesComponent
       }
-    ]
-  },
-
-  // 4. Comercial con Lazy Loading
-  {
-    path: 'comercial',
-    loadChildren: () => import('./modules/area-estrategia-desarrollo-comercial/comercial.routes').then(m => m.COMERCIAL_ROUTES),
-    canActivate: [authGuard]
+    ],
   },
 
   // 5. Comodín
-  { path: '**', redirectTo: 'login' }
+  { path: '**', redirectTo: 'login' },
 ];
