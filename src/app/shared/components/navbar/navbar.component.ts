@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -10,4 +10,13 @@ import { CommonModule } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavbarComponent {
+  isDarkMode = signal(false);
+
+  toggleDarkMode() {
+    const element = document.querySelector('html');
+    if (element) {
+      element.classList.toggle('app-dark');
+      this.isDarkMode.set(element.classList.contains('app-dark'));
+    }
+  }
 }

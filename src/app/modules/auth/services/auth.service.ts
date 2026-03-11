@@ -1,21 +1,21 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, of } from 'rxjs';
 import { User, LoginResponse } from '../../../shared/models/user.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:3005/auth'; 
+  private apiUrl = 'http://localhost:3005/auth';
   private tokenKey = 'calma_token';
   private userKey = 'calma_user';
 
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   login(email: string, password: string): Observable<LoginResponse> {
     const body = { email, password };
-    
+
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, body).pipe(
       tap(respuesta => {
         if (respuesta.access_token && respuesta.usuario) {

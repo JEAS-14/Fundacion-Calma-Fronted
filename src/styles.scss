@@ -3,7 +3,9 @@
 @import "primeicons/primeicons.css";
 
 /* reset box-sizing to prevent accidental overflow */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -13,7 +15,7 @@
   --primary-btn: #4EB3E4;
   --primary-hover: #3a9bc9;
   --text-white: #FFFFFF;
-  
+
   /* Variables de imagen (Aquí pondrás tus links) */
   --bg-image-url: url('https://res.cloudinary.com/dtozni6ik/image/upload/v1772558448/TECNOLOG%C3%8DA_3_kqhjux.png');
   --logo-image-url: url('https://res.cloudinary.com/dtozni6ik/image/upload/v1772558448/Logo_Calma_ltt1yp.png');
@@ -21,19 +23,70 @@
   --font-family: 'Inter', sans-serif;
   --font-navbar: 'Inter', sans-serif;
   --font-layout: 'Inria Sans', sans-serif;
+
+  /* --- Tema Claro (Light Mode) --- */
   --bg-admin: #F4F7F9;
+  /* Fondo grisáceo claro de la página */
+  --surface-ground: #f5f6f8;
+  /* Fondo del layout principal */
+  --surface-section: #ffffff;
+  /* Fondo de tarjetas, sidebar y header */
+  --surface-border: #e6e6e6;
+  /* Bordes de secciones */
+  --text-color: #333333;
+  /* Texto principal */
+  --text-color-secondary: rgba(0, 0, 0, 0.57);
+  /* Textos grises/menús */
+  --text-color-title: #111827;
+  /* Títulos fuertes */
+  --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+/* --- Tema Oscuro (Dark Mode) --- */
+:root.app-dark {
+  --bg-admin: #121212;
+  /* Fondo más oscuro de la página */
+  --surface-ground: #121212;
+  /* Fondo del layout principal en dark mode */
+  --surface-section: #1e1e1e;
+  /* Fondo de tarjetas, sidebar y header oscuros */
+  --surface-border: #333333;
+  /* Bordes oscuros */
+  --text-color: rgba(255, 255, 255, 0.87);
+  /* Texto principal claro */
+  --text-color-secondary: rgba(255, 255, 255, 0.60);
+  /* Menús oscuros con letras legibles */
+  --text-color-title: #ffffff;
+  /* Títulos fuertes blancos */
+  --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 body {
   margin: 0;
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
-  font-family: var(--font-layout); 
+  font-family: var(--font-layout);
   background-color: var(--bg-admin);
 }
-html,
-body {
-  height: 100%;
-  margin: 0;
-  overflow: hidden; /* prevent browser scrollbar; scroll only inside content-area */
+
+
+/* --- PRIMENG OVERRIDES --- */
+.p-datepicker {
+  width: 100% !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.p-datepicker-panel {
+  width: 100% !important;
+  box-shadow: none !important;
+}
+
+.p-datepicker-calendar-container {
+  width: 100% !important;
+}
+
+.p-datepicker table {
+  width: 100% !important;
+  table-layout: fixed;
 }

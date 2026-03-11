@@ -10,6 +10,12 @@
   <!-- AREA DERECHA -->
   <div class="header-right">
 
+    <!-- MODO OSCURO -->
+    <button class="theme-toggle" (click)="toggleDarkMode()"
+      [attr.aria-label]="isDarkMode() ? 'Modo Claro' : 'Modo Oscuro'">
+      <i class="pi" [class.pi-sun]="isDarkMode()" [class.pi-moon]="!isDarkMode()"></i>
+    </button>
+
     <!-- NOTIFICACIONES -->
     <i class="pi pi-bell notification"></i>
 

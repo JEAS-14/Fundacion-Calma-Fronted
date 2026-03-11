@@ -15,6 +15,9 @@ export class SidebarComponent {
   private router = inject(Router);
   private authService = inject(AuthService);
 
+  // link dinamico para dashboard
+  readonly dashboardLink = this.authService.isAdmin() ? '/dashboard/admin' : '/dashboard/usuario';
+
   // estado del submenú comercial
   isComercialOpen = false;
 

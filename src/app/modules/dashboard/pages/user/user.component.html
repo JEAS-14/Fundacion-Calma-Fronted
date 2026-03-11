@@ -1,0 +1,129 @@
+<div class="user-dashboard-container">
+    <header class="dashboard-header">
+        <h1>Mi Panel de Actividades</h1>
+        <p>Resumen de tus tareas y proyectos asignados en Fundación Calma.</p>
+    </header>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon bg-blue"><i class="pi pi-briefcase"></i></div>
+            <div class="stat-data">
+                <span class="label">Proyectos Realizados</span>
+                <span class="number">12</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-yellow"><i class="pi pi-map"></i></div>
+            <div class="stat-data">
+                <span class="label">Convenios Vigentes</span>
+                <span class="number">3</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-purple"><i class="pi pi-users"></i></div>
+            <div class="stat-data">
+                <span class="label">Desempeño de Equipo</span>
+                <span class="number">85%</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="pi pi-star-fill"></i></div>
+            <div class="stat-data">
+                <span class="label">Desempeño Personal</span>
+                <span class="number">92%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content-grid">
+
+        <div class="lists-column">
+
+            <div class="task-card">
+                <div class="card-header">
+                    <h3>Mis Tareas Recientes</h3>
+                    <button class="btn-link">Ver todas <i class="pi pi-arrow-right"></i></button>
+                </div>
+                <div class="task-list">
+                    <div class="task-item">
+                        <div class="task-info">
+                            <div class="icon-box bg-orange"><i class="pi pi-file-edit"></i></div>
+                            <div class="details">
+                                <span class="title">Actualización de Base de Datos</span>
+                                <span class="area">Área de Análisis de Datos</span>
+                            </div>
+                        </div>
+                        <div class="task-meta">
+                            <span class="badge pending">Pendiente</span>
+                            <span class="date"><i class="pi pi-calendar"></i> Hoy</span>
+                        </div>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-info">
+                            <div class="icon-box bg-blue"><i class="pi pi-sync"></i></div>
+                            <div class="details">
+                                <span class="title">Revisión de Convenio Marco</span>
+                                <span class="area">Área Comercial</span>
+                            </div>
+                        </div>
+                        <div class="task-meta">
+                            <span class="badge progress">En Progreso</span>
+                            <span class="date"><i class="pi pi-calendar"></i> 10 Mar 2026</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="task-card mt-4">
+                <div class="card-header">
+                    <h3>Alertas y Prioridades <span class="alert-dot"></span></h3>
+                    <button class="btn-link">Ver todas <i class="pi pi-arrow-right"></i></button>
+                </div>
+                <div class="task-list">
+                    <div class="task-item alert-item">
+                        <div class="task-info">
+                            <div class="icon-box bg-red"><i class="pi pi-exclamation-triangle"></i></div>
+                            <div class="details">
+                                <span class="title text-red">Reunión de Coordinación Urgente</span>
+                                <span class="area">Dirección General</span>
+                            </div>
+                        </div>
+                        <div class="task-meta">
+                            <span class="badge high-priority">Alta Prioridad</span>
+                            <span class="date"><i class="pi pi-clock"></i> 10:00 AM</span>
+                        </div>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-info">
+                            <div class="icon-box bg-orange"><i class="pi pi-bell"></i></div>
+                            <div class="details">
+                                <span class="title">Cierre de Reporte Semanal</span>
+                                <span class="area">Área Comercial</span>
+                            </div>
+                        </div>
+                        <div class="task-meta">
+                            <span class="badge pending">Pendiente</span>
+                            <span class="date"><i class="pi pi-calendar"></i> Mañana</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="calendar-column">
+            <div class="task-card calendar-card">
+                <div class="card-header">
+                    <h3>Mi Agenda</h3>
+                </div>
+                <div class="calendar-body">
+                    <p-datepicker [(ngModel)]="fechaActual" [inline]="true" styleClass="w-full"></p-datepicker>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { AuthService } from './modules/auth/services/auth.service';
 import { LoginComponent } from './modules/auth/pages/login/login.component';
 import { LogoutComponent } from './modules/auth/pages/logout/logout.component';
 import { authGuard, adminGuard } from './core/guards/auth.guard';
-import { AdminDashboardComponent } from './modules/dashboard/pages/admin/admin.component';
-import { UserDashboardComponent } from './modules/dashboard/pages/user/user.component';
+import { AdminComponent } from './modules/dashboard/pages/admin/admin.component';
+import { UserComponent } from './modules/dashboard/pages/user/user.component';
 import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout';
 
 // Nuevos componentes importados
@@ -33,13 +35,13 @@ export const routes: Routes = [
           // Dashboard de Admin (solo admins)
           {
             path: 'admin',
-            component: AdminDashboardComponent,
+            component: AdminComponent,
             canActivate: [adminGuard],
           },
           // Dashboard de Usuario (cualquier usuario autenticado)
           {
             path: 'usuario',
-            component: UserDashboardComponent,
+            component: UserComponent,
             canActivate: [authGuard],
           },
           {
@@ -52,7 +54,10 @@ export const routes: Routes = [
           // Redirigir dashboard raíz según el rol
           {
             path: '',
-            redirectTo: 'usuario',
+            redirectTo: () => {
+              const authService = inject(AuthService);
+              return authService.isAdmin() ? 'admin' : 'usuario';
+            },
             pathMatch: 'full',
           },
         ]
