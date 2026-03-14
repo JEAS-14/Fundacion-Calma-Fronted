@@ -173,3 +173,27 @@
 .logout-btn:hover i {
     color: #d31212;
 }
+
+/* Cargando áreas en sidebar */
+.areas-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 13px;
+    color: var(--text-color-secondary);
+    font-family: 'Inria Sans', sans-serif;
+}
+
+/* Sin áreas asignadas */
+.no-areas-msg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 13px;
+    color: var(--text-color-secondary);
+    font-family: 'Inria Sans', sans-serif;
+    opacity: 0.6;
+    list-style: none;
+}

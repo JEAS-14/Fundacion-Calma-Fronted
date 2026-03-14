@@ -48,9 +48,9 @@
             <div class="card-actions">
                 <button class="icon-btn" title="Enviar Correo"><i class="pi pi-envelope"></i></button>
                 <button class="icon-btn" title="Llamar"><i class="pi pi-phone"></i></button>
-                <button class="icon-btn" title="Chatear" (click)="enviarMensaje(contacto)"><i
-                        class="pi pi-comment"></i></button>
-
+                <button class="icon-btn" title="Chatear" (click)="enviarMensaje(contacto)">
+                    <i class="pi pi-comment"></i>
+                </button>
                 <button class="icon-btn heart-btn" [class.active]="contacto.esFavorito"
                     (click)="toggleFavorito(contacto)" title="Favorito">
                     <i class="pi" [ngClass]="contacto.esFavorito ? 'pi-heart-fill' : 'pi-heart'"></i>

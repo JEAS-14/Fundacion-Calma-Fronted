@@ -59,6 +59,108 @@ $text-gray: #6b7280;
     }
 }
 
+/* --- SECCIÓN DE ÁREAS PERMITIDAS --- */
+.areas-section {
+    background: white;
+    border: 1px solid $border-color;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+
+    .section-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: $text-dark;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0 0 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        i { color: $primary-cyan; }
+    }
+
+    .areas-loading,
+    .areas-error,
+    .no-areas {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: $text-gray;
+        padding: 8px 0;
+    }
+
+    .areas-error { color: #ef4444; }
+
+    .areas-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    /* Chip de área */
+    .area-chip {
+        background: $bg-light;
+        border: 1px solid $border-color;
+        color: $text-gray;
+        padding: 7px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+
+        &:hover {
+            border-color: $primary-cyan;
+            color: $primary-cyan;
+            background: #e0f9fb;
+        }
+
+        &.active {
+            background: $primary-cyan;
+            border-color: $primary-cyan;
+            color: white;
+        }
+
+        /* Badge con número de subáreas */
+        .sub-badge {
+            background: rgba(0,0,0,0.12);
+            border-radius: 10px;
+            padding: 1px 7px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+    }
+
+    /* Subáreas un poco más pequeñas e indentadas visualmente */
+    .subarea-chip {
+        font-size: 12px;
+        padding: 5px 12px;
+        border-style: dashed;
+    }
+}
+
+/* Estado vacío en el grid de contactos */
+.no-contactos {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: $text-gray;
+    padding: 50px 0;
+
+    i { font-size: 2rem; }
+    p { margin: 0; font-size: 15px; }
+}
+
 /* --- FILTROS --- */
 .filters-section {
     display: flex;

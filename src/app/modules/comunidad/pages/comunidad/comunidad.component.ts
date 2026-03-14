@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DialogModule } from 'primeng/dialog'; // Para la ventana modal
+import { DialogModule } from 'primeng/dialog';
 
-// 1. Definimos cómo es la estructura de datos que vendrá de tu Base de Datos
+// Estructura de datos del contacto
 export interface Contacto {
   id?: number;
   nombre: string;
@@ -23,38 +24,32 @@ export interface Contacto {
 })
 export class ComunidadComponent implements OnInit {
 
-  // Lista donde guardaremos los datos que lleguen de la API
   contactos: Contacto[] = [];
-
-  // Variables para controlar el Modal de Nuevo Contacto
   mostrarModal: boolean = false;
   contactoForm: Contacto = { nombre: '', rol: '', area: '', iniciales: '' };
 
-  constructor(private router: Router) { }
+  private apiUrl = 'http://localhost:3005/api/comunidad';
 
-  // Se ejecuta apenas carga la pantalla
+  constructor(private router: Router, private http: HttpClient) { }
+
   ngOnInit() {
     this.obtenerContactos();
   }
 
-  // ==========================================
-  // 🔌 ZONA DE CONEXIÓN A APIS (BACKEND)
-  // ==========================================
-
   // [GET] Obtener lista de contactos
   obtenerContactos() {
-    console.log("Llamando a la API para obtener contactos...");
-    // TODO: Cambiar por this.http.get('tu-api/contactos').subscribe(...)
-
-    // Simulación de los datos que te devolvería tu Backend:
-    this.contactos = [
-      { id: 1, nombre: 'Daniel Amaya', rol: 'CEO & FUNDADOR', area: 'Dirección General', iniciales: 'DA' },
-      { id: 2, nombre: 'Deivi Flores', rol: 'DIR. ESTRATEGIA Y DESARROLLO', area: 'Estrategia', iniciales: 'DF' },
-      { id: 3, nombre: 'Carolina Velezmoro', rol: 'DIR. DE PROYECTOS', area: 'Proyectos', iniciales: 'CV' }
-    ];
+    console.log('Llamando a la API para obtener contactos...');
+    this.http.get<Contacto[]>(`${this.apiUrl}/contactos`).subscribe({
+      next: (data) => {
+        this.contactos = data;
+        console.log('Contactos cargados desde el backend:', data);
+      },
+      error: (err) => {
+        console.error('Error al obtener contactos:', err);
+      }
+    });
   }
 
-  // Abrir la ventana de "Nuevo Contacto" limpia
   abrirModalNuevo() {
     this.contactoForm = { nombre: '', rol: '', area: '', iniciales: '' };
     this.mostrarModal = true;
@@ -62,46 +57,32 @@ export class ComunidadComponent implements OnInit {
 
   // [POST] Guardar un nuevo contacto
   guardarContacto() {
-    console.log("Enviando a la API: ", this.contactoForm);
-    // TODO: Cambiar por this.http.post('tu-api/contactos', this.contactoForm).subscribe(...)
-
-    // Simulación de guardado exitoso:
+    console.log('Enviando a la API: ', this.contactoForm);
+    // TODO: Conectar con this.http.post(...)
     this.contactoForm.iniciales = this.contactoForm.nombre.substring(0, 2).toUpperCase();
-    this.contactoForm.id = new Date().getTime(); // ID temporal
-    this.contactos.push({ ...this.contactoForm }); // Lo agregamos a la lista visual
-
-    this.mostrarModal = false; // Cerramos el modal
-    alert("¡Contacto guardado con éxito en la Base de Datos!");
+    this.contactoForm.id = new Date().getTime();
+    this.contactos.push({ ...this.contactoForm });
+    this.mostrarModal = false;
+    alert('¡Contacto guardado con éxito!');
   }
 
   // [DELETE] Eliminar contacto
   eliminarContacto(id: number | undefined) {
-    if (confirm("¿Estás seguro de eliminar este contacto?")) {
-      console.log(`Eliminando ID: ${id} en la API...`);
-      // TODO: Cambiar por this.http.delete(`tu-api/contactos/${id}`).subscribe(...)
-
+    if (confirm('¿Estás seguro de eliminar este contacto?')) {
       this.contactos = this.contactos.filter(c => c.id !== id);
     }
   }
 
-  // ==========================================
-  // 🚀 NAVEGACIÓN Y ACCIONES EXTRAS
-  // ==========================================
   enviarMensaje(contacto: Contacto) {
     this.router.navigate(['/comunicaciones']);
   }
 
-  // NUEVA FUNCIÓN: Alternar favorito
   toggleFavorito(contacto: Contacto) {
-    contacto.esFavorito = !contacto.esFavorito; // Cambia de true a false y viceversa
-
+    contacto.esFavorito = !contacto.esFavorito;
     if (contacto.esFavorito) {
-      console.log(`Guardando a ${contacto.nombre} en favoritos (API)`);
-      // TODO: this.http.post('tu-api/favoritos', { id: contacto.id }).subscribe()
+      console.log(`Guardando a ${contacto.nombre} en favoritos`);
     } else {
-      console.log(`Quitando a ${contacto.nombre} de favoritos (API)`);
-      // TODO: this.http.delete(`tu-api/favoritos/${contacto.id}`).subscribe()
+      console.log(`Quitando a ${contacto.nombre} de favoritos`);
     }
   }
-
 }

@@ -6,6 +6,11 @@ import { EstrategiaComercial } from './estrategia-comercial/estrategia-comercial
 
 export const COMERCIAL_ROUTES: Routes = [
   {
+    path: '',
+    redirectTo: 'estrategia-comercial',
+    pathMatch: 'full'
+  },
+  {
     path: 'estrategia-comercial',
     component: EstrategiaComercial,
   },
