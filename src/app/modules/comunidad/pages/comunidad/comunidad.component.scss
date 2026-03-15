@@ -1,3 +1,4 @@
+@use "sass:color";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap');
 
 /* Variables de color basadas en tu diseño */
@@ -54,7 +55,7 @@ $text-gray: #6b7280;
         transition: background 0.2s;
 
         &:hover {
-            background-color: darken($primary-cyan, 10%);
+            background-color: color.adjust($primary-cyan, $lightness: -10%);
         }
     }
 }
@@ -444,7 +445,7 @@ $text-gray: #6b7280;
     font-weight: 600;
 
     &:hover {
-        background: darken(#00c2cb, 10%);
+        background: color.adjust(#00c2cb, $lightness: -10%);
     }
 }
 

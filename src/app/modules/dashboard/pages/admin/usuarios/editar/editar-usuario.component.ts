@@ -23,6 +23,8 @@ export class EditarUsuarioComponent implements OnInit {
 
   todasLasAreas: any[] = [];
   areasSeleccionadas: number[] = [];
+  minDate: string = '';
+  maxDate: string = '';
 
   constructor(
     private fb: FormBuilder,
@@ -34,22 +36,39 @@ export class EditarUsuarioComponent implements OnInit {
     this.userId = Number(this.route.snapshot.paramMap.get('id'));
 
     this.editarForm = this.fb.group({
-      nombre_completo: ['', Validators.required],
-      apellido_completo: [''],
+      nombre_completo: ['', [Validators.required, Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
+      apellido_completo: ['', [Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
       email: ['', [Validators.required, Validators.email]],
       rol_id: [null, Validators.required],
-      puesto: [''],
+      puesto: ['', [Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
       fecha_fin_contrato: [''],
       estado: ['ACTIVO']
     });
   }
 
   ngOnInit(): void {
+    const hoy = new Date();
+    this.minDate = hoy.toISOString().split('T')[0];
+    const maxDate = new Date();
+    maxDate.setFullYear(maxDate.getFullYear() + 10);
+    this.maxDate = maxDate.toISOString().split('T')[0];
+
     if (!this.authService.isAdmin()) {
       this.router.navigate(['/dashboard']);
       return;
     }
     this.cargarTodo();
+  }
+
+  onInputLetras(event: Event, controlName: string): void {
+    const input = event.target as HTMLInputElement;
+    const valorOriginal = input.value;
+    const valorLimpio = valorOriginal.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+    
+    if (valorOriginal !== valorLimpio) {
+      input.value = valorLimpio;
+      this.editarForm.get(controlName)?.setValue(valorLimpio);
+    }
   }
 
   cargarTodo(): void {
@@ -92,17 +111,15 @@ export class EditarUsuarioComponent implements OnInit {
     });
   }
 
-  // Esta función se encarga de que si el padre está marcado, las hijas también lo estén, y viceversa.
+  // Esta función aseguraba que padres e hijas estuvieran vinculadas rígidamente.
+  // Ahora la hemos flexibilizado para que el usuario pueda elegir libremente lo que quiere.
   normalizarSeleccionDeAreas(): void {
     const seleccionadasUnicas = new Set(this.areasSeleccionadas);
 
     this.todasLasAreas.forEach(area => {
-      // Si el Área Padre está seleccionada, seleccionar automáticamente todas sus Sub-áreas
-      if (seleccionadasUnicas.has(area.id) && area.subareas) {
-        area.subareas.forEach((sub: any) => seleccionadasUnicas.add(sub.id));
-      }
-
+      // Regla básica de consistencia visual: 
       // Si alguna Sub-área está seleccionada, marcar automáticamente a su Área Padre
+      // para que el usuario no pierda el acceso al grupo principal.
       if (area.subareas) {
         const tieneHijaSeleccionada = area.subareas.some((sub: any) => seleccionadasUnicas.has(sub.id));
         if (tieneHijaSeleccionada) {
@@ -140,7 +157,8 @@ export class EditarUsuarioComponent implements OnInit {
       // DESMARCAR
       this.areasSeleccionadas.splice(idx, 1);
 
-      // Si desmarcó un Área Padre, desmarcar a todas sus hijas
+      // Si desmarcó un Área Padre, OPCIONALMENTE desmarcar a sus hijas.
+      // Pero si el usuario desmarca el padre, tiene sentido quitar todo el grupo.
       const areaPadre = this.todasLasAreas.find(a => a.id === areaId);
       if (areaPadre && areaPadre.subareas) {
         areaPadre.subareas.forEach((sub: any) => {
@@ -148,21 +166,17 @@ export class EditarUsuarioComponent implements OnInit {
           if (subIdx > -1) this.areasSeleccionadas.splice(subIdx, 1);
         });
       }
+      
+      // Si se desmarcó una hija, verificar si quedan hijas marcadas. 
+      // Si no queda ninguna, quizas quieras desmarcar el padre, 
+      // PERO lo dejaremos intacto para permitir tener *solo* el padre marcado.
+      
     } else {
       // MARCAR
       this.areasSeleccionadas.push(areaId);
 
-      // Si marcó un Área Padre, marcar automáticamente a sus hijas
-      const areaPadre = this.todasLasAreas.find(a => a.id === areaId);
-      if (areaPadre && areaPadre.subareas) {
-        areaPadre.subareas.forEach((sub: any) => {
-          if (!this.areasSeleccionadas.includes(sub.id)) {
-            this.areasSeleccionadas.push(sub.id);
-          }
-        });
-      }
-
       // Si marcó una Sub-área, asegurar que el Área Padre se marque también
+      // porque el backend requiere el padre para acceder a la hija.
       this.todasLasAreas.forEach(area => {
         if (area.subareas && area.subareas.some((s: any) => s.id === areaId)) {
           if (!this.areasSeleccionadas.includes(area.id)) {
@@ -170,6 +184,7 @@ export class EditarUsuarioComponent implements OnInit {
           }
         }
       });
+      // Ya NO forzamos marcar todas las hijas si se marca el padre.
     }
   }
 
