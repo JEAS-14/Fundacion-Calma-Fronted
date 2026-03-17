@@ -82,15 +82,14 @@
   <ng-container *ngFor="let area of areas()">
 
     <!-- ÁREA CON SUBÁREAS → menú desplegable -->
-    <li class="menu-item parent" *ngIf="area.subareas && area.subareas.length > 0; else areaSimple"
-        (mouseenter)="areaAbierta = area.id" 
-        (mouseleave)="areaAbierta = null">
+    <li class="menu-item parent" *ngIf="area.subareas && area.subareas.length > 0; else areaSimple">
 
       <div class="menu-parent"
-           [class.active-parent]="areaAbierta === area.id">
+           [class.active-parent]="areaAbierta === area.id"
+           (click)="toggleArea(area.id)">
         <div class="menu-left">
           <i class="pi pi-sitemap"></i>
-          <span>{{ area.nombre }}</span>
+          <span>{{ getAreaLabel(area) }}</span>
         </div>
         <i class="pi" [ngClass]="areaAbierta === area.id ? 'pi-chevron-up' : 'pi-chevron-down'"></i>
       </div>
@@ -99,7 +98,7 @@
         <li *ngFor="let sub of area.subareas">
           <a [routerLink]="getAreaLink(sub)" routerLinkActive="active">
             <i class="pi" [ngClass]="getAreaIcon(sub)"></i>
-            {{ sub.nombre }}
+            {{ getAreaLabel(sub) }}
           </a>
         </li>
       </ul>
@@ -111,7 +110,7 @@
       <li class="menu-item">
         <a [routerLink]="getAreaLink(area)" routerLinkActive="active">
           <i class="pi pi-building"></i>
-          {{ area.nombre }}
+          {{ getAreaLabel(area) }}
         </a>
       </li>
     </ng-template>

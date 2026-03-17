@@ -1,7 +1,9 @@
 ﻿import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConveniosService, ConvenioDto } from './convenios.service';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-desarrollo-comercial',
@@ -16,15 +18,19 @@ export class DesarrolloComercial implements OnInit {
   @ViewChild('logoInput') logoInputRef?: ElementRef<HTMLInputElement>;
 
   conveniosOriginal: Convenio[] = [];
+  page = 1;
+  readonly pageSize = 12;
   convenioSeleccionado: Convenio | null = null;
   convenioPorEliminar: Convenio | null = null;
   nuevoComentario = '';
   usuarioActual = 'Deivi Flores';
   editMode = false;
   esNuevo = false;
+  intentoGuardar = false;
   private logoObjectUrl?: string;
   private readonly storageKey = 'convenios-data';
   private readonly storageSelectedKey = 'convenio-seleccionado-id';
+  private readonly defaultAreaId = 13;
   estadosDisponibles: Estado[] = [
     'pendiente',
     'proceso',
@@ -33,8 +39,24 @@ export class DesarrolloComercial implements OnInit {
     'firmado',
     'cancelado',
   ];
-
-  constructor(private conveniosService: ConveniosService) {}
+  filtroConexion: ConexionFiltro = 'todos';
+  tiposInstitucion: string[] = [
+    'Ministerio',
+    'Gobierno regional',
+    'Municipalidad',
+    'Empresa privada',
+    'ONG',
+    'UGEL',
+    'Persona',
+    'Organismo público',
+    'Asociación civil',
+    'Venue',
+  ];
+  tiposConexion: string[] = ['Convenio', 'Alianza'];
+  constructor(
+    private conveniosService: ConveniosService,
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
     const guardados = this.cargarPersistidos();
@@ -331,16 +353,52 @@ export class DesarrolloComercial implements OnInit {
     return this.conveniosOriginal.filter(
       (c) =>
         c.estado === this.estadoSeleccionado &&
-        (term ? c.nombre.toLowerCase().includes(term) : true),
+        (term ? c.nombre.toLowerCase().includes(term) : true) &&
+        (this.filtroConexion === 'todos'
+          ? true
+          : (c.conexion ?? '').toLowerCase() === this.filtroConexion.toLowerCase()),
     );
+  }
+
+  get totalPaginas(): number {
+    const total = this.conveniosFiltrados.length;
+    return Math.max(1, Math.ceil(total / this.pageSize));
+  }
+
+  get paginas(): number[] {
+    return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  }
+
+  get conveniosPaginados(): Convenio[] {
+    const start = (this.page - 1) * this.pageSize;
+    return this.conveniosFiltrados.slice(start, start + this.pageSize);
+  }
+
+  setPage(p: number) {
+    this.page = Math.min(Math.max(1, p), this.totalPaginas);
+  }
+
+  nextPage() {
+    this.setPage(this.page + 1);
+  }
+
+  prevPage() {
+    this.setPage(this.page - 1);
   }
 
   setFiltro(estado: Estado) {
     this.estadoSeleccionado = estado;
     this.cargarConvenios(this.busqueda, this.estadoSeleccionado);
+    this.setPage(1);
+  }
+
+  setConexionFiltro(valor: ConexionFiltro) {
+    this.filtroConexion = valor;
+    this.setPage(1);
   }
 
   onBuscar() {
+    this.setPage(1);
     this.cargarConvenios(this.busqueda, this.estadoSeleccionado);
   }
 
@@ -357,6 +415,8 @@ export class DesarrolloComercial implements OnInit {
       rubro: '',
       contacto: '',
       telefono: '',
+      tipo: this.tiposInstitucion[0],
+      conexion: this.tiposConexion[0],
       comentarios: [],
       historial: [],
       archivoAdjunto: undefined,
@@ -364,6 +424,7 @@ export class DesarrolloComercial implements OnInit {
     this.convenioSeleccionado = this.normalizarConvenio(base);
     this.editMode = true;
     this.esNuevo = true;
+    this.intentoGuardar = false;
     this.nuevoComentario = '';
     this.persistirSeleccion(this.idConvenio(this.convenioSeleccionado));
   }
@@ -371,14 +432,17 @@ export class DesarrolloComercial implements OnInit {
   abrirDetalle(convenio: Convenio) {
     this.convenioSeleccionado = {
       ...convenio,
-      comentarios: convenio.comentarios ? [...convenio.comentarios] : [],
+      comentarios: convenio.comentarios ? convenio.comentarios.map((c) => ({ ...c })) : [],
       historial: convenio.historial ? [...convenio.historial] : [],
       archivoAdjunto: convenio.archivoAdjunto ? { ...convenio.archivoAdjunto } : undefined,
     };
     this.nuevoComentario = '';
     this.editMode = false;
     this.esNuevo = false;
+    this.intentoGuardar = false;
     this.persistirSeleccion(this.idConvenio(convenio));
+    this.hidratarArchivoAdjunto(this.idConvenio(convenio));
+    this.hidratarComentarios(this.idConvenio(convenio));
   }
 
   cerrarDetalle() {
@@ -387,6 +451,7 @@ export class DesarrolloComercial implements OnInit {
     this.nuevoComentario = '';
     this.editMode = false;
     this.esNuevo = false;
+    this.intentoGuardar = false;
     this.liberarLogo();
     localStorage.removeItem(this.storageSelectedKey);
   }
@@ -394,32 +459,30 @@ export class DesarrolloComercial implements OnInit {
   onArchivoSeleccionado(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files && input.files[0];
-    if (file) {
-      const esPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-      if (!esPdf) {
-        alert('Solo se permite subir archivos PDF.');
-        if (input) input.value = '';
-        return;
-      }
-      const url = URL.createObjectURL(file);
-      const adjunto = { nombre: file.name, url };
+    if (!file || !this.convenioSeleccionado) return;
 
-      // limpiar URL previa si existe
-      this.liberarArchivo(this.convenioSeleccionado);
-
-      if (this.convenioSeleccionado) {
-        this.convenioSeleccionado = {
-          ...this.convenioSeleccionado,
-          archivoAdjunto: adjunto,
-        };
-        this.conveniosOriginal = this.conveniosOriginal.map((c) =>
-          this.idConvenio(c) === this.idConvenio(this.convenioSeleccionado!) ? { ...this.convenioSeleccionado! } : c,
-        );
-        this.persistirConvenios();
-      }
+    const esPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!esPdf) {
+      alert('Solo se permite subir archivos PDF.');
+      input.value = '';
+      return;
     }
-    // reset para permitir volver a abrir el mismo archivo
-    if (input) input.value = '';
+
+    const convenioId = this.idConvenio(this.convenioSeleccionado);
+    const urlArchivo = URL.createObjectURL(file);
+    const adjunto = { nombre: file.name, url: urlArchivo };
+
+    this.liberarArchivo(this.convenioSeleccionado);
+    this.convenioSeleccionado = {
+      ...this.convenioSeleccionado,
+      archivoAdjunto: adjunto,
+    };
+
+    if (/^\d+$/.test(convenioId)) {
+      this.subirArchivoAdjunto(convenioId, adjunto);
+    }
+
+    input.value = '';
   }
 
   verArchivo() {
@@ -430,15 +493,53 @@ export class DesarrolloComercial implements OnInit {
 
   eliminarArchivo() {
     if (!this.convenioSeleccionado) return;
-    this.liberarArchivo(this.convenioSeleccionado);
-    this.convenioSeleccionado = { ...this.convenioSeleccionado, archivoAdjunto: undefined };
-    this.conveniosOriginal = this.conveniosOriginal.map((c) =>
-      this.idConvenio(c) === this.idConvenio(this.convenioSeleccionado!) ? { ...this.convenioSeleccionado! } : c,
-    );
-    this.persistirConvenios();
+    const archivo = this.convenioSeleccionado.archivoAdjunto;
+    const limpiarLocal = () => {
+      this.liberarArchivo(this.convenioSeleccionado);
+      this.convenioSeleccionado = { ...this.convenioSeleccionado!, archivoAdjunto: undefined };
+      this.conveniosOriginal = this.conveniosOriginal.map((c) =>
+        this.idConvenio(c) === this.idConvenio(this.convenioSeleccionado!)
+          ? ({ ...this.convenioSeleccionado! } as Convenio)
+          : c,
+      );
+      this.persistirConvenios();
+    };
+
+    if (!archivo?.id) {
+      const convenioId = this.idConvenio(this.convenioSeleccionado);
+      if (!/^\d+$/.test(convenioId)) {
+        limpiarLocal();
+        return;
+      }
+
+      this.conveniosService.getArchivosByConvenio(convenioId).subscribe((archivos) => {
+        const archivoBd = archivos[0];
+        if (!archivoBd?.id) {
+          limpiarLocal();
+          return;
+        }
+
+        this.conveniosService.deleteArchivo(archivoBd.id).subscribe({
+          next: () => limpiarLocal(),
+          error: (error: unknown) => {
+            console.error('No se pudo eliminar el archivo', error);
+            alert(this.mensajeErrorBackend('No se pudo eliminar el archivo en la BD', error));
+          },
+        });
+      });
+      return;
+    }
+
+    this.conveniosService.deleteArchivo(archivo.id).subscribe({
+      next: () => limpiarLocal(),
+      error: (error: unknown) => {
+        console.error('No se pudo eliminar el archivo', error);
+        alert(this.mensajeErrorBackend('No se pudo eliminar el archivo en la BD', error));
+      },
+    });
   }
 
-  eliminarConvenio(convenio: Convenio) {
+  private eliminarConvenioLocal(convenio: Convenio) {
     const id = this.idConvenio(convenio);
     this.liberarArchivo(convenio);
     this.conveniosOriginal = this.conveniosOriginal.filter((c) => this.idConvenio(c) !== id);
@@ -451,6 +552,7 @@ export class DesarrolloComercial implements OnInit {
       localStorage.removeItem(this.storageSelectedKey);
     }
 
+    this.setPage(Math.min(this.page, this.totalPaginas));
     this.persistirConvenios();
   }
 
@@ -465,8 +567,25 @@ export class DesarrolloComercial implements OnInit {
 
   confirmarEliminacion() {
     if (!this.convenioPorEliminar) return;
-    this.eliminarConvenio(this.convenioPorEliminar);
-    this.convenioPorEliminar = null;
+    const convenio = this.convenioPorEliminar;
+    const id = this.idConvenio(convenio);
+
+    if (!/^\d+$/.test(id)) {
+      this.eliminarConvenioLocal(convenio);
+      this.convenioPorEliminar = null;
+      return;
+    }
+
+    this.conveniosService.deleteConvenio(id).subscribe({
+      next: () => {
+        this.eliminarConvenioLocal(convenio);
+        this.convenioPorEliminar = null;
+      },
+      error: (error: unknown) => {
+        console.error('No se pudo eliminar el convenio', error);
+        alert(this.mensajeErrorBackend('No se pudo eliminar el convenio en la BD', error));
+      },
+    });
   }
 
   eliminarLogo() {
@@ -475,46 +594,84 @@ export class DesarrolloComercial implements OnInit {
     const limpio = { ...this.convenioSeleccionado, logo: undefined };
     this.convenioSeleccionado = limpio;
     this.conveniosOriginal = this.conveniosOriginal.map((c) =>
-      this.idConvenio(c) === this.idConvenio(limpio) ? { ...limpio } : c,
+      this.idConvenio(c) === this.idConvenio(limpio) ? ({ ...limpio } as Convenio) : c,
     );
     this.persistirConvenios();
   }
 
-
   agregarComentario() {
     if (!this.convenioSeleccionado || !this.nuevoComentario.trim()) return;
     const stamp = this.formatearFecha(new Date());
-    const texto = `${this.usuarioActual} · ${stamp} · ${this.nuevoComentario.trim()}`;
+    const comentario = this.nuevoComentario.trim();
+    const textoLocal = `${this.usuarioActual} · ${stamp} · ${comentario}`;
     const id = this.idConvenio(this.convenioSeleccionado);
 
-    this.conveniosService
-      .addComentario(id, this.usuarioActual, texto)
-      .subscribe((resp) => {
-        const actualizado = resp ? this.normalizarConvenio(resp as Convenio) : this.convenioSeleccionado!;
-        const updatedComentarios = (actualizado.comentarios && actualizado.comentarios.length)
-          ? [...actualizado.comentarios, texto]
-          : [...(this.convenioSeleccionado?.comentarios || []), texto];
-
+    this.conveniosService.addComentario(id, comentario).subscribe({
+      next: (resp) => {
         this.convenioSeleccionado = {
-          ...actualizado,
-          comentarios: updatedComentarios,
+          ...this.convenioSeleccionado!,
+          comentarios: [
+            ...(this.convenioSeleccionado?.comentarios || []),
+            { id: resp?.id, texto: textoLocal },
+          ],
           historial: [
-            ...(actualizado.historial || this.convenioSeleccionado?.historial || []),
+            ...(this.convenioSeleccionado?.historial || []),
             `Comentario agregado · ${this.usuarioActual} · ${stamp}`,
           ],
         };
 
         this.conveniosOriginal = this.conveniosOriginal.map((c) =>
-          this.idConvenio(c) === id ? { ...this.convenioSeleccionado! } : c,
+          this.idConvenio(c) === id ? ({ ...this.convenioSeleccionado! } as Convenio) : c,
         );
 
         this.nuevoComentario = '';
         this.persistirConvenios();
-      });
+      },
+      error: (error: unknown) => {
+        console.error('No se pudo guardar el comentario', error);
+        alert(this.mensajeErrorBackend('No se pudo guardar el comentario en la BD', error));
+      },
+    });
+  }
+
+  eliminarComentario(comentario: ComentarioItem) {
+    if (!this.convenioSeleccionado) return;
+    const stamp = this.formatearFecha(new Date());
+
+    const limpiarLocal = () => {
+      this.convenioSeleccionado = {
+        ...this.convenioSeleccionado!,
+        comentarios: (this.convenioSeleccionado?.comentarios || []).filter((c) => c !== comentario),
+        historial: [
+          ...(this.convenioSeleccionado?.historial || []),
+          `Comentario eliminado · ${this.usuarioActual} · ${stamp}`,
+        ],
+      };
+      this.conveniosOriginal = this.conveniosOriginal.map((c) =>
+        this.idConvenio(c) === this.idConvenio(this.convenioSeleccionado!)
+          ? ({ ...this.convenioSeleccionado! } as Convenio)
+          : c,
+      );
+      this.persistirConvenios();
+    };
+
+    if (!comentario.id) {
+      limpiarLocal();
+      return;
+    }
+
+    this.conveniosService.deleteComentario(comentario.id).subscribe({
+      next: () => limpiarLocal(),
+      error: (error: unknown) => {
+        console.error('No se pudo eliminar el comentario', error);
+        alert(this.mensajeErrorBackend('No se pudo eliminar el comentario en la BD', error));
+      },
+    });
   }
 
   habilitarEdicion() {
     this.editMode = true;
+    this.intentoGuardar = false;
   }
 
   abrirLogo() {
@@ -523,27 +680,115 @@ export class DesarrolloComercial implements OnInit {
 
   guardarEdicion() {
     if (!this.convenioSeleccionado) return;
-    const payload = { ...this.convenioSeleccionado };
+    this.intentoGuardar = true;
+    if (!this.formularioConvenioValido()) {
+      alert('⚠️ Completa todos los campos obligatorios');
+      return;
+    }
+    const payload = this.toDto(this.convenioSeleccionado);
 
     if (this.esNuevo) {
-      const id = payload.id || this.slug(payload.nombre || `nuevo-${Date.now()}`);
-      const nuevo = this.normalizarConvenio({ ...payload, id });
-      this.conveniosOriginal = [...this.conveniosOriginal, nuevo];
-      this.esNuevo = false;
-      this.editMode = false;
-      this.convenioSeleccionado = nuevo;
-      this.persistirConvenios();
+      this.conveniosService.createConvenio(payload).subscribe({
+        next: (resp) => {
+          const nuevo = resp
+            ? this.normalizarConvenio(this.mapFromDto(resp))
+            : this.normalizarConvenio(payload as Convenio);
+
+          if (this.convenioSeleccionado?.archivoAdjunto?.nombre && this.convenioSeleccionado.archivoAdjunto.url) {
+            nuevo.archivoAdjunto = { ...this.convenioSeleccionado.archivoAdjunto };
+          }
+
+          this.conveniosOriginal = [...this.conveniosOriginal, nuevo];
+          this.esNuevo = false;
+          this.editMode = false;
+          this.intentoGuardar = false;
+          this.convenioSeleccionado = nuevo;
+          this.persistirConvenios();
+
+          const nuevoId = this.idConvenio(nuevo);
+          if (/^\d+$/.test(nuevoId) && nuevo.archivoAdjunto?.nombre && nuevo.archivoAdjunto.url) {
+            this.subirArchivoAdjunto(nuevoId, nuevo.archivoAdjunto);
+          }
+
+          alert('✅ Registrado Correctamente');
+        },
+        error: (error) => {
+          console.error('❌ No se pudo conectar con el servidor', error);
+          alert('❌ Error al guardar el convenio en la base de datos');
+        },
+      });
+
       return;
     }
 
-    this.conveniosService.updateConvenio(payload).subscribe((resp) => {
-      const actualizado = resp ? this.normalizarConvenio(resp as Convenio) : payload;
-      this.conveniosOriginal = this.conveniosOriginal.map((c) =>
-        this.idConvenio(c) === this.idConvenio(actualizado) ? { ...actualizado } : c,
-      );
-      this.editMode = false;
-      this.persistirConvenios();
+    this.conveniosService.updateConvenio(payload).subscribe({
+      next: (resp) => {
+        const actualizado = resp
+          ? this.normalizarConvenio(this.mapFromDto(resp))
+          : this.normalizarConvenio(payload as Convenio);
+        this.conveniosOriginal = this.conveniosOriginal.map((c) =>
+          this.idConvenio(c) === this.idConvenio(actualizado) ? ({ ...actualizado } as Convenio) : c,
+        );
+        this.editMode = false;
+        this.intentoGuardar = false;
+        this.persistirConvenios();
+      },
+      error: (error) => {
+        console.error('No se pudo actualizar el convenio', error);
+        alert('Error al actualizar en la BD');
+      },
     });
+  }
+
+  formularioConvenioValido(): boolean {
+    if (!this.convenioSeleccionado) return false;
+
+    const nombre = this.convenioSeleccionado.nombre.trim();
+    const ruc = (this.convenioSeleccionado.ruc ?? '').replace(/\D/g, '');
+    const fecha = (this.convenioSeleccionado.fecha ?? '').trim();
+    const rubro = (this.convenioSeleccionado.rubro ?? '').trim();
+    const contacto = (this.convenioSeleccionado.contacto ?? '').trim();
+    const telefono = (this.convenioSeleccionado.telefono ?? '').replace(/\D/g, '');
+    const tipo = (this.convenioSeleccionado.tipo ?? '').trim();
+    const conexion = (this.convenioSeleccionado.conexion ?? '').trim();
+    const estado = (this.convenioSeleccionado.estado ?? '').trim();
+
+    return (
+      !!nombre &&
+      ruc.length === 11 &&
+      !!fecha &&
+      !!rubro &&
+      !!contacto &&
+      telefono.length === 9 &&
+      !!tipo &&
+      !!conexion &&
+      !!estado
+    );
+  }
+
+  campoInvalido(campo: 'nombre' | 'ruc' | 'estado' | 'fecha' | 'tipo' | 'rubro' | 'conexion' | 'contacto' | 'telefono'): boolean {
+    if (!this.intentoGuardar || !this.convenioSeleccionado) return false;
+
+    switch (campo) {
+      case 'nombre':
+        return !this.convenioSeleccionado.nombre.trim();
+      case 'ruc':
+        return (this.convenioSeleccionado.ruc ?? '').replace(/\D/g, '').length !== 11;
+      case 'estado':
+        return !(this.convenioSeleccionado.estado ?? '').trim();
+      case 'fecha':
+        return !(this.convenioSeleccionado.fecha ?? '').trim();
+      case 'tipo':
+        return !(this.convenioSeleccionado.tipo ?? '').trim();
+      case 'rubro':
+        return !(this.convenioSeleccionado.rubro ?? '').trim();
+      case 'conexion':
+        return !(this.convenioSeleccionado.conexion ?? '').trim();
+      case 'contacto':
+        return !(this.convenioSeleccionado.contacto ?? '').trim();
+      case 'telefono':
+        return (this.convenioSeleccionado.telefono ?? '').replace(/\D/g, '').length !== 9;
+    }
   }
 
   onLogoSeleccionado(event: Event) {
@@ -552,14 +797,18 @@ export class DesarrolloComercial implements OnInit {
     if (!file || !this.convenioSeleccionado) return;
     const mime = file.type.toLowerCase();
     const nombre = file.name.toLowerCase();
-    const esImg = mime === 'image/png' || mime === 'image/jpeg' || nombre.endsWith('.png') || nombre.endsWith('.jpg') || nombre.endsWith('.jpeg');
+    const esImg =
+      mime === 'image/png' ||
+      mime === 'image/jpeg' ||
+      nombre.endsWith('.png') ||
+      nombre.endsWith('.jpg') ||
+      nombre.endsWith('.jpeg');
     if (!esImg) {
       alert('Solo se permiten imágenes PNG o JPG para el logo.');
       input.value = '';
       return;
     }
 
-    // Leer como DataURL para que el logo persista y se muestre en la lista
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result as string;
@@ -568,9 +817,15 @@ export class DesarrolloComercial implements OnInit {
       this.logoObjectUrl = dataUrl;
 
       const nombreSeguro = this.convenioSeleccionado ? this.convenioSeleccionado.nombre || '' : '';
-      this.convenioSeleccionado = { ...this.convenioSeleccionado!, nombre: nombreSeguro, logo: dataUrl };
+      this.convenioSeleccionado = {
+        ...this.convenioSeleccionado!,
+        nombre: nombreSeguro,
+        logo: dataUrl,
+      };
       this.conveniosOriginal = this.conveniosOriginal.map((c) =>
-        this.idConvenio(c) === this.idConvenio(this.convenioSeleccionado!) ? { ...this.convenioSeleccionado! } : c,
+        this.idConvenio(c) === this.idConvenio(this.convenioSeleccionado!)
+          ? ({ ...this.convenioSeleccionado! } as Convenio)
+          : c,
       );
       this.persistirConvenios();
     };
@@ -589,33 +844,75 @@ export class DesarrolloComercial implements OnInit {
         this.persistirConvenios();
       }
       this.restaurarSeleccionPersistida();
+      this.setPage(1);
     });
   }
 
   private mapFromDto(dto: ConvenioDto): Convenio {
     const base = {
-      nombre: dto.nombre,
-      fecha: dto.fecha,
-      siglas: dto.siglas ?? this.siglasFromNombre(dto.nombre),
+      id: dto.id ? String(dto.id) : undefined,
+      nombre: dto.entidadNombre ?? dto.nombre ?? '',
+      fecha: this.normalizarFechaDto(dto.fechaExpiracion ?? dto.fecha),
+      siglas: dto.siglas ?? this.siglasFromNombre(dto.entidadNombre ?? dto.nombre ?? ''),
       color: dto.color ?? this.colorFromSeed(),
-      logo: dto.logo,
-      estado: dto.estado,
+      logo: dto.logoUrl ?? dto.logo,
+      estado: dto.estado ?? 'pendiente',
+      ruc: dto.ruc,
+      rubro: dto.rubro,
+      contacto: dto.contactoNombre ?? dto.contacto,
+      telefono: dto.telefonoContacto ?? dto.telefono,
+      tipo: dto.tipo,
+      conexion: dto.conexion,
+      comentarios: (dto.comentarios || []).map((comentario) => ({ texto: comentario })),
+      historial: dto.historial,
     };
     return this.normalizarConvenio(base);
   }
 
-  private normalizarConvenio(convenio: Convenio): Convenio {
+  private normalizarConvenio(
+    convenio: Partial<Convenio> & { nombre: string; estado: Estado | string; fecha?: string },
+  ): Convenio {
     const estadoCanon = this.mapEstado(convenio.estado);
+    const rucLimpio = (convenio.ruc ?? '00000000000').replace(/\D/g, '').slice(0, 11);
+    const telefonoLimpio = (convenio.telefono ?? '999999999').replace(/\D/g, '').slice(0, 9);
+    const colorSeguro = convenio.color ?? this.colorFromSeed();
     return {
       id: convenio.id ?? this.slug(convenio.nombre),
       ...convenio,
-      ruc: convenio.ruc ?? '10121245698',
+      siglas: convenio.siglas ?? this.siglasFromNombre(convenio.nombre),
+       color: colorSeguro,
+      ruc: rucLimpio,
       fecha: convenio.fecha ?? '2026-03-25',
       rubro: convenio.rubro ?? 'alimentaria',
       contacto: convenio.contacto ?? 'Deivi Flores',
-      telefono: convenio.telefono ?? '965847123',
+      telefono: telefonoLimpio,
+      tipo: convenio.tipo ?? this.tiposInstitucion[0],
+      conexion: convenio.conexion ?? this.tiposConexion[0],
       estado: estadoCanon,
       estadoLabel: this.labelEstado(estadoCanon),
+    };
+  }
+
+  private toDto(convenio: Convenio): ConvenioDto {
+    const limpio = this.normalizarConvenio(convenio);
+    return {
+      id: limpio.id,
+      areaId: this.obtenerAreaId(),
+      creadorId: this.obtenerCreadorId(),
+      entidadNombre: limpio.nombre,
+      siglas: limpio.siglas,
+      color: limpio.color,
+      logoUrl: limpio.logo,
+      estado: this.labelEstado(this.mapEstado(limpio.estado)),
+      fechaExpiracion: this.toIsoDate(limpio.fecha),
+      ruc: limpio.ruc,
+      rubro: limpio.rubro,
+      contactoNombre: limpio.contacto,
+      telefonoContacto: limpio.telefono,
+      tipo: limpio.tipo,
+      conexion: limpio.conexion,
+      comentarios: (limpio.comentarios || []).map((comentario) => comentario.texto),
+      historial: limpio.historial,
     };
   }
 
@@ -675,6 +972,123 @@ export class DesarrolloComercial implements OnInit {
     return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
+  private normalizarFechaDto(fecha?: string): string {
+    if (!fecha) return '2026-03-25';
+    const valor = fecha.trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(valor)) return valor.slice(0, 10);
+    return valor;
+  }
+
+  private toIsoDate(fecha: string): string {
+    const valor = fecha.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+
+    const match = valor.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (match) {
+      const [, dd, mm, yyyy] = match;
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    return valor;
+  }
+
+  private obtenerCreadorId(): number {
+    const usuario = this.authService.getCurrentUser();
+    return Number(usuario?.id ?? 0);
+  }
+
+  private obtenerAreaId(): number {
+    const usuario = this.authService.getCurrentUser() as { area_id?: number; areaId?: number } | null;
+    return Number(usuario?.area_id ?? usuario?.areaId ?? this.defaultAreaId);
+  }
+
+  private mensajeErrorBackend(base: string, error: unknown): string {
+    if (!(error instanceof HttpErrorResponse)) return base;
+    const detalle =
+      typeof error.error === 'string'
+        ? error.error
+        : error.error?.message || error.message || error.statusText;
+    const status = error.status ? ` [${error.status}]` : '';
+    return `${base}${status}${detalle ? `: ${detalle}` : ''}`;
+  }
+
+  private subirArchivoAdjunto(convenioId: string, adjunto: { nombre: string; url?: string }) {
+    if (!adjunto.url) return;
+
+    this.conveniosService.addArchivo(convenioId, adjunto.nombre, adjunto.url).subscribe({
+      next: (resp) => {
+        if (!resp || !this.convenioSeleccionado) {
+          alert('No se pudo guardar el archivo en la BD');
+          return;
+        }
+
+        this.convenioSeleccionado = {
+          ...this.convenioSeleccionado,
+          archivoAdjunto: {
+            ...adjunto,
+            id: resp.id,
+          },
+          historial: [
+            ...(this.convenioSeleccionado.historial || []),
+            `Archivo adjuntado · ${this.usuarioActual} · ${this.formatearFecha(new Date())}`,
+          ],
+        };
+        this.conveniosOriginal = this.conveniosOriginal.map((c) =>
+          this.idConvenio(c) === convenioId ? ({ ...this.convenioSeleccionado! } as Convenio) : c,
+        );
+        this.persistirConvenios();
+      },
+      error: (error: unknown) => {
+        console.error('No se pudo guardar el archivo', error);
+        alert(this.mensajeErrorBackend('No se pudo guardar el archivo en la BD', error));
+      },
+    });
+  }
+
+  private hidratarArchivoAdjunto(convenioId: string) {
+    if (!this.convenioSeleccionado || !/^\d+$/.test(convenioId)) return;
+
+    this.conveniosService.getArchivosByConvenio(convenioId).subscribe((archivos) => {
+      const archivo = archivos[0];
+      if (!archivo || !this.convenioSeleccionado || this.idConvenio(this.convenioSeleccionado) !== convenioId) return;
+
+      this.convenioSeleccionado = {
+        ...this.convenioSeleccionado,
+        archivoAdjunto: {
+          id: archivo.id,
+          nombre: archivo.nombreArchivo,
+          url: archivo.urlArchivo,
+        },
+      };
+
+      this.conveniosOriginal = this.conveniosOriginal.map((c) =>
+        this.idConvenio(c) === convenioId ? ({ ...this.convenioSeleccionado! } as Convenio) : c,
+      );
+      this.persistirConvenios();
+    });
+  }
+
+  private hidratarComentarios(convenioId: string) {
+    if (!this.convenioSeleccionado || !/^\d+$/.test(convenioId)) return;
+
+    this.conveniosService.getComentariosByConvenio(convenioId).subscribe((comentarios) => {
+      if (!this.convenioSeleccionado || this.idConvenio(this.convenioSeleccionado) !== convenioId) return;
+
+      this.convenioSeleccionado = {
+        ...this.convenioSeleccionado,
+        comentarios: comentarios.map((comentario) => ({
+          id: comentario.id,
+          texto: comentario.comentario,
+        })),
+      };
+
+      this.conveniosOriginal = this.conveniosOriginal.map((c) =>
+        this.idConvenio(c) === convenioId ? ({ ...this.convenioSeleccionado! } as Convenio) : c,
+      );
+      this.persistirConvenios();
+    });
+  }
+
   private slug(nombre: string): string {
     return nombre
       .toLowerCase()
@@ -705,10 +1119,7 @@ export class DesarrolloComercial implements OnInit {
     try {
       const serializable = this.conveniosOriginal.map((c) => ({
         ...c,
-        // los objectURL no sobreviven al refresh; guardamos solo el nombre
-        archivoAdjunto: c.archivoAdjunto
-          ? { nombre: c.archivoAdjunto.nombre }
-          : undefined,
+        archivoAdjunto: c.archivoAdjunto ? { nombre: c.archivoAdjunto.nombre } : undefined,
       }));
       localStorage.setItem(this.storageKey, JSON.stringify(serializable));
     } catch (e) {
@@ -750,6 +1161,8 @@ export class DesarrolloComercial implements OnInit {
   }
 }
 type Estado = 'pendiente' | 'proceso' | 'convenio' | 'reunion' | 'firmado' | 'cancelado';
+type ConexionFiltro = 'todos' | 'Convenio' | 'Alianza';
+type ComentarioItem = { id?: number; texto: string };
 
 type Convenio = {
   id?: string;
@@ -764,8 +1177,9 @@ type Convenio = {
   rubro?: string;
   contacto?: string;
   telefono?: string;
+  tipo?: string;
+  conexion?: string;
   historial?: string[];
-  comentarios?: string[];
-  archivoAdjunto?: { nombre: string; url?: string };
+  comentarios?: ComentarioItem[];
+  archivoAdjunto?: { id?: number; nombre: string; url?: string };
 };
-

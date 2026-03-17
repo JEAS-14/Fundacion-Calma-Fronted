@@ -1,0 +1,236 @@
+.analisis-page{
+  padding:26px 28px 48px;
+  display:flex;
+  flex-direction:column;
+  gap:22px;
+  color:#0f172a;
+}
+
+.hero{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+
+  h1{
+    margin:0;
+    font-size:28px;
+    font-weight:700;
+    letter-spacing:-0.02em;
+  }
+
+  p{
+    margin:0;
+    color:#4b5563;
+    font-size:14px;
+  }
+}
+
+.cards-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap:16px;
+}
+
+.data-card{
+  background:#ffffff;
+  border:1px solid #e5e9f2;
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 12px 28px rgba(15, 23, 42, 0.04);
+  transition:transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover{
+    transform:translateY(-2px);
+    box-shadow:0 16px 36px rgba(15, 23, 42, 0.08);
+  }
+
+  h3{
+    margin:0 0 6px;
+    font-size:15px;
+    letter-spacing:-0.01em;
+  }
+
+  p{
+    margin:0;
+    color:#566074;
+    font-size:13px;
+    line-height:1.5;
+  }
+}
+
+.card-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+.tag{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.02em;
+
+  &.estrategico{ background:#e5f0ff; color:#1d4ed8; }
+  &.gestion{ background:#e6e8ff; color:#4338ca; }
+  &.comercial{ background:#dcf9e8; color:#0f9d58; }
+  &.espacios{ background:#fff4d9; color:#b45309; }
+}
+
+.icon-btn{
+  width:32px;
+  height:32px;
+  border:1px solid #e5e7eb;
+  background:#f8fafc;
+  color:#6b7280;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:background 0.2s ease, color 0.2s ease;
+
+  &:hover{
+    background:#eef2ff;
+    color:#4338ca;
+  }
+}
+
+.card-body{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+}
+
+.icon-bubble{
+  width:44px;
+  height:44px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+  font-size:20px;
+
+  &.estrategico{ background:#dbeafe; color:#1d4ed8; }
+  &.gestion{ background:#e0e7ff; color:#4338ca; }
+  &.comercial{ background:#dcfce7; color:#0f9d58; }
+  &.espacios{ background:#fef3c7; color:#b45309; }
+}
+
+.boards{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap:18px;
+  align-items:flex-start;
+}
+
+.board{
+  background:#ffffff;
+  border:1px solid #e5e9f2;
+  border-radius:16px;
+  padding:18px 18px 20px;
+  box-shadow:0 12px 28px rgba(15, 23, 42, 0.04);
+}
+
+.board-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:12px;
+
+  h3{
+    margin:0;
+    font-size:17px;
+    font-weight:700;
+  }
+}
+
+.task-card{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  background:#ffffff;
+  border:1px solid #e5e9f2;
+  border-radius:12px;
+  padding:14px;
+  box-shadow:0 8px 18px rgba(15, 23, 42, 0.03);
+}
+
+.task-number{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  background:#1d8ff3;
+  color:#ffffff;
+  display:grid;
+  place-items:center;
+  font-weight:700;
+  font-size:13px;
+}
+
+.task-copy{
+  h4{
+    margin:0 0 4px;
+    font-size:14px;
+    letter-spacing:-0.01em;
+  }
+  p{
+    margin:0;
+    color:#59606e;
+    font-size:13px;
+  }
+}
+
+.btn-add{
+  margin-top:14px;
+  width:100%;
+  border:1px dashed #cbd5e1;
+  background:transparent;
+  color:#475569;
+  padding:12px;
+  border-radius:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all 0.2s ease;
+
+  &:hover{
+    background:#f8fafc;
+    color:#0f172a;
+  }
+}
+
+.done{
+  background:#f8fffb;
+  border:1px solid #c7f3dc;
+}
+
+.status-chip{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 12px;
+  border-radius:10px;
+  font-size:12px;
+  font-weight:700;
+
+  &.success{
+    background:#d1fae5;
+    color:#15803d;
+  }
+}
+
+@media (max-width: 900px){
+  .analisis-page{
+    padding:22px 18px 36px;
+  }
+
+  .cards-grid{
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .boards{
+    grid-template-columns:1fr;
+  }
+}
