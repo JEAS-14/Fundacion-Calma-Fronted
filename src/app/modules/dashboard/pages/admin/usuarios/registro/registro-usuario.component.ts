@@ -110,19 +110,51 @@ export class RegistroUsuarioComponent implements OnInit {
     this.cargando = true;
     this.mensaje = null;
 
-    const userData = { ...this.registroForm.value };
-    const areaId = userData.area_id;
-    const subareaId = userData.subarea_id;
-    delete userData.area_id; // Frontend cleanup, register payload doesnt need area_id
-    delete userData.subarea_id;
-    
-    // El backend ahora pide enviar cadena vacía en lugar de null/omitir
-    if (!userData.fecha_fin_contrato) {
-      userData.fecha_fin_contrato = "";
+    const formulario = { ...this.registroForm.value };
+    const areaId = formulario.area_id;
+    const subareaId = formulario.subarea_id;
+
+    const rolIdMap: Record<string, number> = {
+      admin: 24,
+      director: 25,
+      usuario: 26,
+      practicante: 26 // soporte para variantes históricas/antiguas
+    };
+
+    const roleNameMap: Record<string, string> = {
+      admin: 'administrador',
+      director: 'director',
+      // El backend actual no tiene rol "usuario" activo. Para usuarios estándar usamos "practicante".
+      usuario: 'practicante',
+      practicante: 'practicante'
+    };
+
+    const rolFinal = roleNameMap[formulario.rol] ?? formulario.rol?.toLowerCase() ?? 'practicante';
+
+    const userData = {
+      nombre: formulario.nombre?.trim(),
+      apellido: formulario.apellido?.trim(),
+      nombre_completo: formulario.nombre?.trim(),
+      apellido_completo: formulario.apellido?.trim(),
+      email: formulario.email?.trim().toLowerCase(),
+      // El backend requiere un rol válido en la tabla de roles.
+      rol: rolFinal,
+      rol_id: rolIdMap[formulario.rol] ?? 26,
+      puesto: formulario.puesto?.trim() || '',
+      fecha_fin_contrato: formulario.fecha_fin_contrato || '',
+      estado: 'ACTIVO'
+    } as any;
+
+    if (formulario.rol !== 'admin') {
+      if (formulario.area_id) {
+        userData.area_id = Number(formulario.area_id);
+      }
+      if (formulario.subarea_id) {
+        userData.subarea_id = Number(formulario.subarea_id);
+      }
     }
-    if (!userData.puesto) {
-      userData.puesto = "";
-    }
+
+    console.log('➡️ Enviando registro de usuario (payload base):', JSON.stringify(userData, null, 2));
 
     this.registroService.register(userData).subscribe({
       next: (response: any) => {
@@ -148,12 +180,21 @@ export class RegistroUsuarioComponent implements OnInit {
       error: (err: any) => {
         this.cargando = false;
         let msjError = 'Ocurrió un error inesperado al crear el usuario.';
-        
+
+        if (err.status === 400 && err.error) {
+          const serverMsg = err.error.message || err.error.error || err.error || ''; 
+          console.error('Detalle 400 del servidor:', err.error);
+          if (typeof serverMsg === 'string' && serverMsg.length > 0) {
+            msjError = `Error de validación: ${serverMsg}`;
+          }
+        }
+
         if (err.status === 409) msjError = 'Este correo electrónico ya está registrado.';
         if (err.status === 401 || err.status === 403) msjError = 'Acceso denegado: No tienes permisos de administrador.';
-        
+
         this.mensaje = { tipo: 'error', texto: msjError };
-        console.error('Error en registro:', err);
+        console.error('Error en registro:', err, 'payload:', JSON.stringify(userData, null, 2));
+        console.error('Detalle 400 del servidor (raw):', JSON.stringify(err.error, null, 2));
       }
     });
   }
@@ -164,6 +205,13 @@ export class RegistroUsuarioComponent implements OnInit {
       tipo: 'exito',
       texto: 'Usuario creado exitosamente con sus accesos. Se ha enviado un correo con instrucciones.'
     };
+
+    // Limpiar el formulario para no mantener datos antiguos
     this.registroForm.reset({ rol: 'usuario', puesto: '', fecha_fin_contrato: '', nombre: '', apellido: '', email: '', area_id: null, subarea_id: null });
+
+    // Redirigir a la lista de usuarios para que el usuario pueda confirmar visualmente.
+    this.router.navigate(['/dashboard/admin-dashboard/usuarios'], {
+      queryParams: { mensaje: 'Usuario creado correctamente.' }
+    });
   }
 }
