@@ -1,0 +1,92 @@
+<div class="chat-container">
+
+    <aside class="chat-sidebar">
+        <div class="sidebar-header">
+            <h2>Comunicaciones</h2>
+            <div class="search-box">
+                <i class="pi pi-search"></i>
+                <input type="text" placeholder="Buscar mensajes..." />
+            </div>
+        </div>
+
+        <div class="contact-list">
+            <div class="contact-item" *ngFor="let contacto of contactos"
+                [class.active]="contactoActivo.id === contacto.id" (click)="seleccionarContacto(contacto)">
+
+                <div class="avatar" [ngClass]="contacto.colorBg">{{ contacto.iniciales }}</div>
+
+                <div class="contact-info">
+                    <span class="name">{{ contacto.nombre }}</span>
+                    <span class="last-msg" *ngIf="contacto.mensajes.length > 0">
+                        {{ contacto.mensajes[contacto.mensajes.length - 1].texto }}
+                    </span>
+                </div>
+
+                <div class="contact-meta">
+                    <span class="time" *ngIf="contacto.mensajes.length > 0">
+                        {{ contacto.mensajes[contacto.mensajes.length - 1].hora }}
+                    </span>
+                    <span class="badge" *ngIf="contacto.mensajesSinLeer > 0">{{ contacto.mensajesSinLeer }}</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="chat-main" *ngIf="contactoActivo">
+
+        <header class="chat-header">
+            <div class="user-info">
+                <div class="avatar" [ngClass]="contactoActivo.colorBg">{{ contactoActivo.iniciales }}</div>
+                <div class="details">
+                    <span class="name">{{ contactoActivo.nombre }}</span>
+                    <span class="status" *ngIf="contactoActivo.enLinea"><span class="dot"></span> En línea</span>
+                    <span class="status" *ngIf="!contactoActivo.enLinea" style="color:#6b7280;">Desconectado</span>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="icon-btn" (click)="iniciarLlamada()" title="Llamada de voz"><i
+                        class="pi pi-phone"></i></button>
+                <button class="icon-btn" (click)="iniciarVideoLlamada()" title="Videollamada"><i
+                        class="pi pi-video"></i></button>
+                <button class="icon-btn" (click)="verInfoContacto()" title="Información"><i
+                        class="pi pi-info-circle"></i></button>
+            </div>
+        </header>
+
+        <div class="chat-messages">
+            <div class="date-divider"><span>Hoy</span></div>
+
+            <div class="message" *ngFor="let msj of contactoActivo.mensajes"
+                [ngClass]="msj.enviadoPorMi ? 'sent' : 'received'">
+
+                <div class="avatar-small" [ngClass]="contactoActivo.colorBg" *ngIf="!msj.enviadoPorMi">
+                    {{ contactoActivo.iniciales }}
+                </div>
+
+                <div class="message-content">
+                    <div class="bubble">{{ msj.texto }}</div>
+                    <span class="time">
+                        {{ msj.hora }}
+                        <i *ngIf="msj.enviadoPorMi" class="pi pi-check-circle text-blue"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <footer class="chat-footer">
+
+            <input type="file" #fileInput (change)="onFileSelected($event)" style="display: none;" />
+
+            <button class="icon-btn" (click)="fileInput.click()" title="Adjuntar archivo"><i
+                    class="pi pi-paperclip"></i></button>
+
+            <input type="text" [(ngModel)]="nuevoMensaje" (keyup.enter)="enviarMensaje()"
+                placeholder="Escribe un mensaje a {{ contactoActivo.nombre }}..." class="msg-input" />
+
+            <button class="icon-btn" (click)="agregarEmoji()" title="Agregar emoji"><i
+                    class="pi pi-face-smile"></i></button>
+            <button class="send-btn" (click)="enviarMensaje()"><i class="pi pi-send"></i></button>
+        </footer>
+
+    </main>
+</div>

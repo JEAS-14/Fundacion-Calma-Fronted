@@ -1,0 +1,94 @@
+<div class="comunidad-container">
+    <header class="header-section">
+        <div class="titles">
+            <h1>Comunidad Calma</h1>
+            <p>Conecta con todo el equipo CALMA.</p>
+        </div>
+        <button class="btn-nuevo" (click)="abrirModalNuevo()">
+            <i class="pi pi-plus"></i> Nuevo Contacto
+        </button>
+    </header>
+
+    <div class="filters-section">
+        <div class="search-box">
+            <i class="pi pi-search"></i>
+            <input type="text" placeholder="Buscar por nombre..." />
+        </div>
+        <div class="area-filter">
+            <label>ÁREA</label>
+            <div class="select-wrapper">
+                <select>
+                    <option>Todos</option>
+                    <option>Dirección General</option>
+                </select>
+                <i class="pi pi-chevron-down"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="contacts-grid">
+        <div class="contact-card" *ngFor="let contacto of contactos">
+
+            <button class="btn-delete" (click)="eliminarContacto(contacto.id)">
+                <i class="pi pi-times"></i>
+            </button>
+
+            <div class="badge-role">
+                <i class="pi pi-briefcase"></i> {{ contacto.area }}
+            </div>
+
+            <div class="profile-info">
+                <div class="avatar bg-gray">{{ contacto.iniciales }}</div>
+                <h2 class="name">{{ contacto.nombre }}</h2>
+                <span class="specific-role">{{ contacto.rol }}</span>
+            </div>
+
+            <hr class="divider">
+
+            <div class="card-actions">
+                <button class="icon-btn" title="Enviar Correo"><i class="pi pi-envelope"></i></button>
+                <button class="icon-btn" title="Llamar"><i class="pi pi-phone"></i></button>
+                <button class="icon-btn" title="Chatear" (click)="enviarMensaje(contacto)">
+                    <i class="pi pi-comment"></i>
+                </button>
+                <button class="icon-btn heart-btn" [class.active]="contacto.esFavorito"
+                    (click)="toggleFavorito(contacto)" title="Favorito">
+                    <i class="pi" [ngClass]="contacto.esFavorito ? 'pi-heart-fill' : 'pi-heart'"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<p-dialog header="Registrar Nuevo Contacto" [(visible)]="mostrarModal" [modal]="true" [style]="{ width: '400px' }">
+
+    <div class="modal-form">
+        <div class="form-group">
+            <label>Nombre Completo</label>
+            <input type="text" [(ngModel)]="contactoForm.nombre" placeholder="Ej. Juan Pérez" class="custom-input">
+        </div>
+
+        <div class="form-group">
+            <label>Rol / Cargo</label>
+            <input type="text" [(ngModel)]="contactoForm.rol" placeholder="Ej. Analista de Datos" class="custom-input">
+        </div>
+
+        <div class="form-group">
+            <label>Área</label>
+            <select [(ngModel)]="contactoForm.area" class="custom-input">
+                <option value="">Seleccione un área...</option>
+                <option value="Dirección General">Dirección General</option>
+                <option value="Comercial">Comercial</option>
+                <option value="Recursos Humanos">Recursos Humanos</option>
+                <option value="Tecnología">Tecnología</option>
+            </select>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <button class="btn-cancelar" (click)="mostrarModal = false">Cancelar</button>
+        <button class="btn-guardar" (click)="guardarContacto()">Guardar Contacto</button>
+    </ng-template>
+
+</p-dialog>

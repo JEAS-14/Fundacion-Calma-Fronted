@@ -1,21 +1,15 @@
 <div class="notificaciones-container">
 
   <div class="header">
+    <div class="titulo">
+      <h2>Centro de Notificaciones</h2>
+      <span class="contador">{{ cantidadNoLeidas }} sin leer</span>
+    </div>
 
-    <h2>
-      Centro de Notificaciones
-      <span class="contador">{{ cantidadNoLeidas }}</span>
-    </h2>
-
-    <button
-      pButton
-      label="Nueva Publicación"
-      icon="pi pi-plus"
-      class="p-button-sm">
+    <button class="btn-nueva" (click)="crearNotificacion()">
+      + Nueva Publicación
     </button>
-
   </div>
-
 
   <div class="filtros">
 
@@ -30,18 +24,17 @@
       class="filtro"
       [class.activo]="filtroSeleccionado === 'comunicado'"
       (click)="cambiarFiltro('comunicado')">
-      Comunicado
+      📢 Comunicados
     </button>
 
     <button
       class="filtro"
       [class.activo]="filtroSeleccionado === 'alerta'"
       (click)="cambiarFiltro('alerta')">
-      Alerta
+      ⚠️ Alertas
     </button>
 
   </div>
-
 
   <div class="lista-notificaciones">
 
@@ -49,36 +42,60 @@
       class="card"
       *ngFor="let n of notificacionesFiltradas"
       [class.leido]="n.leido"
+      (click)="abrirDetalle(n)"
     >
 
       <div class="icono">
-
         <span *ngIf="n.tipo === 'comunicado'">📢</span>
         <span *ngIf="n.tipo === 'alerta'">⚠️</span>
-
       </div>
-
 
       <div class="contenido">
 
-        <h4>{{ n.titulo }}</h4>
+        <div class="top">
+          <h4>{{ n.titulo }}</h4>
+          <span class="fecha">{{ n.creado_at | date:'short' }}</span>
+        </div>
 
         <p>{{ n.mensaje }}</p>
 
-        <span class="fecha">{{ n.fecha }}</span>
+        <div class="acciones">
+
+          <button
+            class="btn-leido"
+            (click)="toggleLeido(n); $event.stopPropagation()">
+            {{ n.leido ? 'Desmarcar' : 'Marcar leído' }}
+          </button>
+
+          <button
+            class="btn-eliminar"
+            (click)="eliminarNotificacion(n.id); $event.stopPropagation()">
+            Eliminar
+          </button>
+
+        </div>
 
       </div>
 
-
-      <button
-        class="btn-leido"
-        (click)="toggleLeido(n)">
-
-        {{ n.leido ? 'Desmarcar' : 'Marcar leído' }}
-
-      </button>
-
     </div>
+
+  </div>
+
+</div>
+
+<div class="modal" *ngIf="notificacionSeleccionada">
+
+  <div class="modal-content" (click)="$event.stopPropagation()">
+
+    <h3>{{ notificacionSeleccionada.titulo }}</h3>
+
+    <p>{{ notificacionSeleccionada.mensaje }}</p>
+
+    <p><b>Tipo:</b> {{ notificacionSeleccionada.tipo }}</p>
+
+    <p><b>Fecha:</b> {{ notificacionSeleccionada.creado_at | date:'full' }}</p>
+
+    <button (click)="cerrarModal()">Cerrar</button>
 
   </div>
 
