@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { NotificacionesService } from '../../services/notificaciones.service';
+import { FormsModule } from '@angular/forms';
 
 export type TipoNotificacion = 'comunicado' | 'alerta';
 
@@ -12,21 +13,34 @@ export interface Notificacion {
   tipo: string;
   creado_at: Date;
   leido: boolean;
+  imagen?: string;
 }
 
 @Component({
   selector: 'app-notificaciones',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule, HttpClientModule, FormsModule],
   templateUrl: './notificaciones.html',
   styleUrls: ['./notificaciones.scss'],
 })
 export class Notificaciones implements OnInit {
 
+  mostrarConfirmacion = false;
+  idAEliminar: number | null = null;
+
   filtroSeleccionado: 'todos' | TipoNotificacion = 'todos';
   notificaciones: Notificacion[] = [];
 
   notificacionSeleccionada: Notificacion | null = null;
+
+  mostrarFormulario = false;
+
+  form = {
+    titulo: '',
+    mensaje: '',
+    tipo: 'comunicado',
+    imagen: null as string | null
+  };
 
   constructor(private service: NotificacionesService) {}
 
@@ -48,7 +62,6 @@ export class Notificaciones implements OnInit {
   get cantidadNoLeidas(): number {
     return this.notificaciones.filter(n => !n.leido).length;
   }
-
 
   cambiarFiltro(filtro: 'todos' | TipoNotificacion): void {
     this.filtroSeleccionado = filtro;
@@ -85,16 +98,40 @@ export class Notificaciones implements OnInit {
     });
   }
 
-  crearNotificacion(): void {
-    const nueva = {
-      titulo: 'Prueba ' + new Date().getTime(),
-      mensaje: 'Mensaje de prueba',
-      tipo: 'comunicado'
+  toggleFormulario(): void {
+    this.mostrarFormulario = !this.mostrarFormulario;
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files && input.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      this.form.imagen = reader.result as string;
     };
 
-    this.service.crear(nueva).subscribe({
+    reader.readAsDataURL(file);
+
+    input.value = '';
+  }
+
+  guardarNotificacion(): void {
+    this.service.crear(this.form).subscribe({
       next: () => {
         this.cargarNotificaciones();
+
+        this.form = {
+          titulo: '',
+          mensaje: '',
+          tipo: 'comunicado',
+          imagen: null
+        };
+
+        this.mostrarFormulario = false;
       },
       error: (err) => {
         console.error('Error al crear', err);
@@ -103,12 +140,31 @@ export class Notificaciones implements OnInit {
   }
 
   abrirDetalle(n: Notificacion): void {
-    console.log('CLICK ', n);
+    console.log('CLICK', n);
     this.notificacionSeleccionada = n;
   }
 
   cerrarModal(): void {
     this.notificacionSeleccionada = null;
+  }
+
+  abrirConfirmacion(id: number, event: Event): void {
+  event.stopPropagation(); 
+  this.idAEliminar = id;
+  this.mostrarConfirmacion = true;
+  }
+
+  cancelarEliminar(): void {
+    this.mostrarConfirmacion = false;
+    this.idAEliminar = null;
+  }
+
+  confirmarEliminar(): void {
+    if (this.idAEliminar !== null) {
+      this.eliminarNotificacion(this.idAEliminar);
+    }
+
+    this.cancelarEliminar();
   }
 
 }
