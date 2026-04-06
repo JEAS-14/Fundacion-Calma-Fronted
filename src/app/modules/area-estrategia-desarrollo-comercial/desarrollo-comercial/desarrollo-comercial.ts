@@ -13,11 +13,16 @@ import { AuthService } from '../../auth/services/auth.service';
   styleUrl: './desarrollo-comercial.scss',
 })
 export class DesarrolloComercial implements OnInit {
+  vistaActual: 'convenios' | 'actividades' = 'convenios';
   estadoSeleccionado: Estado = 'pendiente';
+  filtroActividad: FiltroActividad = 'todos';
   busqueda = '';
+  mostrandoFormularioActividad = false;
+  actividadEnEdicion: ActividadForm = this.crearActividadForm();
   @ViewChild('logoInput') logoInputRef?: ElementRef<HTMLInputElement>;
 
   conveniosOriginal: Convenio[] = [];
+  actividadesOriginal: Actividad[] = [];
   page = 1;
   readonly pageSize = 12;
   convenioSeleccionado: Convenio | null = null;
@@ -59,294 +64,8 @@ export class DesarrolloComercial implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const guardados = this.cargarPersistidos();
-    if (guardados && guardados.length) {
-      this.conveniosOriginal = guardados.map((c) => this.normalizarConvenio(c));
-    } else {
-      this.conveniosOriginal = this.seed;
-      this.cargarConvenios();
-    }
-    this.restaurarSeleccionPersistida();
+    this.cargarConvenios();
   }
-  private seed: Convenio[] = [
-    {
-      nombre: 'Univ. Norbert Wiener',
-      fecha: '20/02/2026',
-      siglas: 'UNW',
-      color: 'linear-gradient(135deg, #0b62b2, #114f86)',
-      logo: 'assets/logo-wienner.jpg',
-      estado: 'pendiente',
-      ruc: '20123456789',
-      rubro: 'Educación',
-      contacto: 'Deivi Flores',
-      telefono: '+51 999 999 999',
-      historial: ['Creación de convenio • Fabiola', 'Estado actualizado a Pendiente'],
-    },
-    {
-      nombre: 'Gore Apurimac',
-      fecha: '20/08/2026',
-      siglas: 'GA',
-      color: 'linear-gradient(135deg, #ffb703, #f77f00)',
-      logo: 'assets/logo-apurimac.png',
-      estado: 'proceso',
-    },
-    {
-      nombre: 'Gore Cajamarca',
-      fecha: '10/05/2026',
-      siglas: 'GC',
-      color: 'linear-gradient(135deg, #6a1b9a, #8e24aa)',
-      logo: 'assets/logo-cajamarca.png',
-      estado: 'convenio',
-    },
-    {
-      nombre: 'Univ. Ruiz de Montoya',
-      fecha: '20/12/2026',
-      siglas: 'URM',
-      color: 'linear-gradient(135deg, #212121, #424242)',
-      logo: 'assets/logo-montoya.png',
-      estado: 'firmado',
-    },
-    {
-      nombre: 'Munic.de punta hermosa',
-      fecha: '01/01/2027',
-      siglas: 'MPH',
-      color: 'linear-gradient(135deg, #009688, #00796b)',
-      logo: 'assets/logo-puntahermosa.png',
-      estado: 'reunion',
-    },
-    {
-      nombre: 'Gore Arequipa',
-      fecha: '20/12/2026',
-      siglas: 'GAQ',
-      color: 'linear-gradient(135deg, #f57c00, #ef6c00)',
-      logo: 'assets/logo-arequipa.png',
-      estado: 'cancelado',
-    },
-    {
-      nombre: 'Gob. Regional Cusco',
-      fecha: '15/03/2027',
-      siglas: 'GRC',
-      color: 'linear-gradient(135deg, #8e44ad, #6c3483)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Universidad San Marcos',
-      fecha: '05/09/2026',
-      siglas: 'UNMSM',
-      color: 'linear-gradient(135deg, #c0392b, #a93226)',
-      estado: 'proceso',
-    },
-    {
-      nombre: 'Gob. Regional Lambayeque',
-      fecha: '11/11/2026',
-      siglas: 'GRL',
-      color: 'linear-gradient(135deg, #1abc9c, #16a085)',
-      estado: 'convenio',
-    },
-    {
-      nombre: 'Universidad del Sur',
-      fecha: '28/02/2027',
-      siglas: 'UDS',
-      color: 'linear-gradient(135deg, #34495e, #2c3e50)',
-      estado: 'reunion',
-    },
-    {
-      nombre: 'Municipalidad de Lima',
-      fecha: '12/07/2026',
-      siglas: 'ML',
-      color: 'linear-gradient(135deg, #2980b9, #2471a3)',
-      estado: 'firmado',
-    },
-    {
-      nombre: 'Colegio Mayor',
-      fecha: '03/10/2026',
-      siglas: 'CM',
-      color: 'linear-gradient(135deg, #f39c12, #d68910)',
-      estado: 'cancelado',
-    },
-    {
-      nombre: 'Instituto Tecnológico Andino',
-      fecha: '18/01/2027',
-      siglas: 'ITA',
-      color: 'linear-gradient(135deg, #27ae60, #1e8449)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Universidad Pacífico Sur',
-      fecha: '09/06/2026',
-      siglas: 'UPS',
-      color: 'linear-gradient(135deg, #5dade2, #3498db)',
-      estado: 'proceso',
-    },
-    {
-      nombre: 'Hospital Nacional Central',
-      fecha: '22/04/2027',
-      siglas: 'HNC',
-      color: 'linear-gradient(135deg, #7f8c8d, #636e72)',
-      estado: 'convenio',
-    },
-    {
-      nombre: 'Gob. Regional Piura',
-      fecha: '30/08/2026',
-      siglas: 'GRP',
-      color: 'linear-gradient(135deg, #e67e22, #d35400)',
-      estado: 'reunion',
-    },
-    {
-      nombre: 'Universidad Andina',
-      fecha: '17/12/2026',
-      siglas: 'UA',
-      color: 'linear-gradient(135deg, #8d6e63, #6d4c41)',
-      estado: 'firmado',
-    },
-    {
-      nombre: 'Municipalidad Surco',
-      fecha: '08/05/2027',
-      siglas: 'SUR',
-      color: 'linear-gradient(135deg, #d81b60, #c2185b)',
-      estado: 'cancelado',
-    },
-    {
-      nombre: 'Colegio San Mateo',
-      fecha: '14/02/2027',
-      siglas: 'CSM',
-      color: 'linear-gradient(135deg, #4caf50, #2e7d32)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Instituto Los Andes',
-      fecha: '19/03/2027',
-      siglas: 'ILA',
-      color: 'linear-gradient(135deg, #00acc1, #00838f)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Universidad del Norte',
-      fecha: '27/04/2026',
-      siglas: 'UDN',
-      color: 'linear-gradient(135deg, #7e57c2, #5e35b1)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Gob. Regional Tacna',
-      fecha: '08/06/2026',
-      siglas: 'GRT',
-      color: 'linear-gradient(135deg, #ff7043, #e64a19)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Municipalidad Miraflores',
-      fecha: '15/07/2026',
-      siglas: 'MMF',
-      color: 'linear-gradient(135deg, #26c6da, #00acc1)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Universidad Andina Sur',
-      fecha: '02/08/2026',
-      siglas: 'UAS',
-      color: 'linear-gradient(135deg, #9ccc65, #7cb342)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Gob. Regional Puno',
-      fecha: '18/09/2026',
-      siglas: 'GRP',
-      color: 'linear-gradient(135deg, #8d6e63, #6d4c41)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Hospital Regional Norte',
-      fecha: '25/10/2026',
-      siglas: 'HRN',
-      color: 'linear-gradient(135deg, #90a4ae, #78909c)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Centro Médico Vida',
-      fecha: '12/11/2026',
-      siglas: 'CMV',
-      color: 'linear-gradient(135deg, #ef5350, #e53935)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Fundación Educa',
-      fecha: '30/12/2026',
-      siglas: 'FED',
-      color: 'linear-gradient(135deg, #ab47bc, #8e24aa)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Universidad Valle',
-      fecha: '09/01/2027',
-      siglas: 'UV',
-      color: 'linear-gradient(135deg, #42a5f5, #1e88e5)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Municipalidad Callao',
-      fecha: '21/01/2027',
-      siglas: 'MCL',
-      color: 'linear-gradient(135deg, #ffa726, #fb8c00)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Gob. Regional Loreto',
-      fecha: '05/02/2027',
-      siglas: 'GRL',
-      color: 'linear-gradient(135deg, #26a69a, #00897b)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Instituto Superior Andino',
-      fecha: '18/02/2027',
-      siglas: 'ISA',
-      color: 'linear-gradient(135deg, #78909c, #546e7a)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Universidad Tecnológica',
-      fecha: '03/03/2027',
-      siglas: 'UT',
-      color: 'linear-gradient(135deg, #ec407a, #d81b60)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Municipalidad Trujillo',
-      fecha: '20/03/2027',
-      siglas: 'MTR',
-      color: 'linear-gradient(135deg, #ffca28, #f9a825)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Gob. Regional Huánuco',
-      fecha: '07/04/2027',
-      siglas: 'GRH',
-      color: 'linear-gradient(135deg, #8e24aa, #6a1b9a)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Universidad Metropolitana',
-      fecha: '25/04/2027',
-      siglas: 'UM',
-      color: 'linear-gradient(135deg, #43a047, #2e7d32)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Hospital Virgen',
-      fecha: '13/05/2027',
-      siglas: 'HV',
-      color: 'linear-gradient(135deg, #5c6bc0, #3949ab)',
-      estado: 'pendiente',
-    },
-    {
-      nombre: 'Colegio San José',
-      fecha: '29/05/2027',
-      siglas: 'CSJ',
-      color: 'linear-gradient(135deg, #ff8a65, #f4511e)',
-      estado: 'pendiente',
-    },
-  ].map((c) => this.normalizarConvenio(c));
 
   get conveniosFiltrados(): Convenio[] {
     const term = this.busqueda.trim().toLowerCase();
@@ -360,8 +79,23 @@ export class DesarrolloComercial implements OnInit {
     );
   }
 
+  get actividadesFiltradas(): Actividad[] {
+    const term = this.busqueda.trim().toLowerCase();
+    return this.actividadesOriginal.filter(
+      (actividad) =>
+        (this.filtroActividad === 'todos' ? true : actividad.estado === this.filtroActividad) &&
+        (term
+          ? actividad.titulo.toLowerCase().includes(term) ||
+            actividad.descripcion.toLowerCase().includes(term)
+          : true),
+    );
+  }
+
   get totalPaginas(): number {
-    const total = this.conveniosFiltrados.length;
+    const total =
+      this.vistaActual === 'convenios'
+        ? this.conveniosFiltrados.length
+        : this.actividadesFiltradas.length;
     return Math.max(1, Math.ceil(total / this.pageSize));
   }
 
@@ -372,6 +106,21 @@ export class DesarrolloComercial implements OnInit {
   get conveniosPaginados(): Convenio[] {
     const start = (this.page - 1) * this.pageSize;
     return this.conveniosFiltrados.slice(start, start + this.pageSize);
+  }
+
+  get actividadesPaginadas(): Actividad[] {
+    const start = (this.page - 1) * this.pageSize;
+    return this.actividadesFiltradas.slice(start, start + this.pageSize);
+  }
+
+  cambiarVista(vista: 'convenios' | 'actividades') {
+    this.vistaActual = vista;
+    if (vista === 'actividades') {
+      this.filtroActividad = 'todos';
+    } else {
+      this.mostrandoFormularioActividad = false;
+    }
+    this.setPage(1);
   }
 
   setPage(p: number) {
@@ -388,7 +137,9 @@ export class DesarrolloComercial implements OnInit {
 
   setFiltro(estado: Estado) {
     this.estadoSeleccionado = estado;
-    this.cargarConvenios(this.busqueda, this.estadoSeleccionado);
+    if (this.vistaActual === 'convenios') {
+      this.cargarConvenios(this.busqueda, this.estadoSeleccionado);
+    }
     this.setPage(1);
   }
 
@@ -397,9 +148,83 @@ export class DesarrolloComercial implements OnInit {
     this.setPage(1);
   }
 
+  setFiltroActividad(valor: FiltroActividad) {
+    this.filtroActividad = valor;
+    this.setPage(1);
+  }
+
   onBuscar() {
     this.setPage(1);
-    this.cargarConvenios(this.busqueda, this.estadoSeleccionado);
+    if (this.vistaActual === 'convenios') {
+      this.cargarConvenios(this.busqueda, this.estadoSeleccionado);
+    }
+  }
+
+  ejecutarAccionPrincipal() {
+    if (this.vistaActual === 'convenios') {
+      this.crearNuevoConvenio();
+      return;
+    }
+
+    this.abrirFormularioActividad();
+  }
+
+  abrirFormularioActividad() {
+    this.mostrandoFormularioActividad = true;
+    this.actividadEnEdicion = this.crearActividadForm();
+  }
+
+  cancelarFormularioActividad() {
+    this.mostrandoFormularioActividad = false;
+    this.actividadEnEdicion = this.crearActividadForm();
+  }
+
+  agregarEnlaceActividad() {
+    this.actividadEnEdicion = {
+      ...this.actividadEnEdicion,
+      enlaces: [...this.actividadEnEdicion.enlaces, { nombre: '', url: '' }],
+    };
+  }
+
+  guardarActividad() {
+    if (
+      !this.actividadEnEdicion.titulo.trim() ||
+      !this.actividadEnEdicion.descripcion.trim() ||
+      !this.actividadEnEdicion.fechaLimite
+    ) {
+      return;
+    }
+
+    const nuevaActividad: Actividad = {
+      id: `act-${Date.now()}`,
+      titulo: this.actividadEnEdicion.titulo.trim(),
+      descripcion: this.actividadEnEdicion.descripcion.trim(),
+      fechaLimite: this.formatearFechaActividad(this.actividadEnEdicion.fechaLimite),
+      estado: this.actividadEnEdicion.estado,
+      enlaces: this.actividadEnEdicion.enlaces.filter(
+        (enlace) => enlace.nombre.trim() || enlace.url.trim(),
+      ),
+    };
+
+    this.actividadesOriginal = [nuevaActividad, ...this.actividadesOriginal];
+    this.mostrandoFormularioActividad = false;
+    this.actividadEnEdicion = this.crearActividadForm();
+    this.setPage(1);
+  }
+
+  private crearActividadForm(): ActividadForm {
+    return {
+      titulo: '',
+      descripcion: '',
+      estado: 'pendiente',
+      fechaLimite: '',
+      enlaces: [{ nombre: '', url: '' }],
+    };
+  }
+
+  private formatearFechaActividad(fechaIso: string): string {
+    const [year, month, day] = fechaIso.split('-');
+    return `${day}/${month}/${year}`;
   }
 
   crearNuevoConvenio() {
@@ -470,7 +295,7 @@ export class DesarrolloComercial implements OnInit {
 
     const convenioId = this.idConvenio(this.convenioSeleccionado);
     const urlArchivo = URL.createObjectURL(file);
-    const adjunto = { nombre: file.name, url: urlArchivo };
+    const adjunto = { nombre: file.name, url: urlArchivo, file };
 
     this.liberarArchivo(this.convenioSeleccionado);
     this.convenioSeleccionado = {
@@ -694,7 +519,7 @@ export class DesarrolloComercial implements OnInit {
             ? this.normalizarConvenio(this.mapFromDto(resp))
             : this.normalizarConvenio(payload as Convenio);
 
-          if (this.convenioSeleccionado?.archivoAdjunto?.nombre && this.convenioSeleccionado.archivoAdjunto.url) {
+          if (this.convenioSeleccionado?.archivoAdjunto?.nombre) {
             nuevo.archivoAdjunto = { ...this.convenioSeleccionado.archivoAdjunto };
           }
 
@@ -706,7 +531,7 @@ export class DesarrolloComercial implements OnInit {
           this.persistirConvenios();
 
           const nuevoId = this.idConvenio(nuevo);
-          if (/^\d+$/.test(nuevoId) && nuevo.archivoAdjunto?.nombre && nuevo.archivoAdjunto.url) {
+          if (/^\d+$/.test(nuevoId) && nuevo.archivoAdjunto?.file) {
             this.subirArchivoAdjunto(nuevoId, nuevo.archivoAdjunto);
           }
 
@@ -726,11 +551,17 @@ export class DesarrolloComercial implements OnInit {
         const actualizado = resp
           ? this.normalizarConvenio(this.mapFromDto(resp))
           : this.normalizarConvenio(payload as Convenio);
+        if (this.convenioSeleccionado?.archivoAdjunto?.nombre) {
+          actualizado.archivoAdjunto = { ...this.convenioSeleccionado.archivoAdjunto };
+        }
         this.conveniosOriginal = this.conveniosOriginal.map((c) =>
-          this.idConvenio(c) === this.idConvenio(actualizado) ? ({ ...actualizado } as Convenio) : c,
+          this.idConvenio(c) === this.idConvenio(actualizado)
+            ? ({ ...actualizado } as Convenio)
+            : c,
         );
         this.editMode = false;
         this.intentoGuardar = false;
+        this.convenioSeleccionado = actualizado;
         this.persistirConvenios();
       },
       error: (error) => {
@@ -766,7 +597,18 @@ export class DesarrolloComercial implements OnInit {
     );
   }
 
-  campoInvalido(campo: 'nombre' | 'ruc' | 'estado' | 'fecha' | 'tipo' | 'rubro' | 'conexion' | 'contacto' | 'telefono'): boolean {
+  campoInvalido(
+    campo:
+      | 'nombre'
+      | 'ruc'
+      | 'estado'
+      | 'fecha'
+      | 'tipo'
+      | 'rubro'
+      | 'conexion'
+      | 'contacto'
+      | 'telefono',
+  ): boolean {
     if (!this.intentoGuardar || !this.convenioSeleccionado) return false;
 
     switch (campo) {
@@ -839,8 +681,8 @@ export class DesarrolloComercial implements OnInit {
       if (data && data.length) {
         this.conveniosOriginal = data.map((d) => this.mapFromDto(d));
         this.persistirConvenios();
-      } else if (busqueda) {
-        this.conveniosOriginal = this.seed;
+      } else {
+        this.conveniosOriginal = [];
         this.persistirConvenios();
       }
       this.restaurarSeleccionPersistida();
@@ -880,7 +722,7 @@ export class DesarrolloComercial implements OnInit {
       id: convenio.id ?? this.slug(convenio.nombre),
       ...convenio,
       siglas: convenio.siglas ?? this.siglasFromNombre(convenio.nombre),
-       color: colorSeguro,
+      color: colorSeguro,
       ruc: rucLimpio,
       fecha: convenio.fecha ?? '2026-03-25',
       rubro: convenio.rubro ?? 'alimentaria',
@@ -998,7 +840,10 @@ export class DesarrolloComercial implements OnInit {
   }
 
   private obtenerAreaId(): number {
-    const usuario = this.authService.getCurrentUser() as { area_id?: number; areaId?: number } | null;
+    const usuario = this.authService.getCurrentUser() as {
+      area_id?: number;
+      areaId?: number;
+    } | null;
     return Number(usuario?.area_id ?? usuario?.areaId ?? this.defaultAreaId);
   }
 
@@ -1012,10 +857,13 @@ export class DesarrolloComercial implements OnInit {
     return `${base}${status}${detalle ? `: ${detalle}` : ''}`;
   }
 
-  private subirArchivoAdjunto(convenioId: string, adjunto: { nombre: string; url?: string }) {
-    if (!adjunto.url) return;
+  private subirArchivoAdjunto(
+    convenioId: string,
+    adjunto: { nombre: string; url?: string; file?: File },
+  ) {
+    if (!adjunto.file) return;
 
-    this.conveniosService.addArchivo(convenioId, adjunto.nombre, adjunto.url).subscribe({
+    this.conveniosService.addArchivo(convenioId, adjunto.file).subscribe({
       next: (resp) => {
         if (!resp || !this.convenioSeleccionado) {
           alert('No se pudo guardar el archivo en la BD');
@@ -1025,8 +873,9 @@ export class DesarrolloComercial implements OnInit {
         this.convenioSeleccionado = {
           ...this.convenioSeleccionado,
           archivoAdjunto: {
-            ...adjunto,
             id: resp.id,
+            nombre: resp.nombreArchivo,
+            url: resp.urlArchivo,
           },
           historial: [
             ...(this.convenioSeleccionado.historial || []),
@@ -1050,7 +899,12 @@ export class DesarrolloComercial implements OnInit {
 
     this.conveniosService.getArchivosByConvenio(convenioId).subscribe((archivos) => {
       const archivo = archivos[0];
-      if (!archivo || !this.convenioSeleccionado || this.idConvenio(this.convenioSeleccionado) !== convenioId) return;
+      if (
+        !archivo ||
+        !this.convenioSeleccionado ||
+        this.idConvenio(this.convenioSeleccionado) !== convenioId
+      )
+        return;
 
       this.convenioSeleccionado = {
         ...this.convenioSeleccionado,
@@ -1072,7 +926,8 @@ export class DesarrolloComercial implements OnInit {
     if (!this.convenioSeleccionado || !/^\d+$/.test(convenioId)) return;
 
     this.conveniosService.getComentariosByConvenio(convenioId).subscribe((comentarios) => {
-      if (!this.convenioSeleccionado || this.idConvenio(this.convenioSeleccionado) !== convenioId) return;
+      if (!this.convenioSeleccionado || this.idConvenio(this.convenioSeleccionado) !== convenioId)
+        return;
 
       this.convenioSeleccionado = {
         ...this.convenioSeleccionado,
@@ -1103,7 +958,7 @@ export class DesarrolloComercial implements OnInit {
   }
 
   private liberarArchivo(convenio: Convenio | null) {
-    if (convenio?.archivoAdjunto?.url) {
+    if (convenio?.archivoAdjunto?.url?.startsWith('blob:')) {
       URL.revokeObjectURL(convenio.archivoAdjunto.url);
     }
   }
@@ -1181,5 +1036,30 @@ type Convenio = {
   conexion?: string;
   historial?: string[];
   comentarios?: ComentarioItem[];
-  archivoAdjunto?: { id?: number; nombre: string; url?: string };
+  archivoAdjunto?: { id?: number; nombre: string; url?: string; file?: File };
+};
+
+type ActividadEstado = 'pendiente' | 'proceso' | 'firmado';
+type FiltroActividad = 'todos' | ActividadEstado;
+
+type Actividad = {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  fechaLimite: string;
+  estado: ActividadEstado;
+  enlaces?: ActividadEnlace[];
+};
+
+type ActividadEnlace = {
+  nombre: string;
+  url: string;
+};
+
+type ActividadForm = {
+  titulo: string;
+  descripcion: string;
+  estado: ActividadEstado;
+  fechaLimite: string;
+  enlaces: ActividadEnlace[];
 };

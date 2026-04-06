@@ -11,6 +11,14 @@
   overflow: hidden;
 }
 
+.page-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 .modal-content.single-column {
   display: grid;
   grid-template-columns: 1fr;
@@ -209,6 +217,236 @@
   max-width: calc(350px * 4 + 24px * 3);
 }
 
+.actividades-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 520px;
+}
+
+.actividad-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 24, 0.32);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 96px 24px 32px;
+  z-index: 1200;
+  overflow-y: auto;
+}
+
+.actividad-form {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 28px;
+  border: 1px solid #ececec;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(100%, 760px);
+  margin: 0;
+  position: relative;
+}
+
+.actividad-form__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #1f1f1f;
+}
+
+.actividad-form__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.actividad-form__close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.actividad-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.actividad-form__field span {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.actividad-form__field small {
+  font-size: 13px;
+  color: #8a8a8a;
+}
+
+.actividad-form__field input,
+.actividad-form__field textarea {
+  width: 100%;
+  border: 1px solid #d8d8d8;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 15px;
+  color: #222;
+  background: #fff;
+  outline: none;
+}
+
+.actividad-form__field textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.actividad-form__field--date input {
+  width: 180px;
+  max-width: 100%;
+}
+
+.actividad-form__states {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.activity-state-chip {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: #eceff4;
+  color: #718096;
+}
+
+.activity-state-chip.pendiente.active {
+  background: #ff2a1a;
+  color: #fff;
+}
+
+.activity-state-chip.proceso.active {
+  background: #f5a623;
+  color: #fff;
+}
+
+.activity-state-chip.firmado.active {
+  background: #52c041;
+  color: #fff;
+}
+
+.actividad-form__link-row {
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr) 44px;
+  gap: 12px;
+  align-items: center;
+}
+
+.activity-link-add {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: #9dd7f0;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.actividad-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.activity-cancel,
+.activity-submit {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 22px;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.activity-cancel {
+  background: #e8e8e8;
+  color: #1f1f1f;
+}
+
+.activity-submit {
+  background: #4eb3e4;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actividad-card {
+  border: 1px solid #d9d1c8;
+  border-radius: 12px;
+  background: #fff;
+  padding: 16px 18px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+}
+
+.actividad-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.actividad-card__top h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1f1f1f;
+}
+
+.actividad-card__top p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #5b5b5b;
+}
+
+.actividad-card__actions {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.actividad-card__meta {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.actividad-fecha {
+  font-size: 13px;
+  color: #5d5d5d;
+}
+
 .convenios-list::-webkit-scrollbar {
   width: 6px;
 }
@@ -237,7 +475,7 @@
   z-index: 1;
   width: 36px;
   height: 28px;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
@@ -246,10 +484,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease,
+    box-shadow 0.12s ease, transform 0.08s ease;
+}
+
+.page-number:hover {
+  background: rgba(78, 179, 228, 0.12);
+  border-color: rgba(78, 179, 228, 0.18);
 }
 
 .page-number.active {
   color: #0f1f2e;
+  background: #dff1fb;
+  border-color: #8fcfee;
+  box-shadow: 0 6px 14px rgba(78, 179, 228, 0.2);
 }
 
 .page-btn {
@@ -1209,4 +1457,64 @@
 }
 .pi-trash {
   transform: scale(1.2);
+}
+.tabs {
+  display: inline-flex;
+  background: #f1f5f9; /* gris clarito */
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  gap: 3px;
+  margin-left: auto;
+  align-self: flex-start;
+}
+
+.tab-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #111;
+  transition: all 0.2s ease;
+}
+
+/* ACTIVO (azul como figma) */
+.tab-btn.active {
+  background: #4EB3E4; /* tu color de figma */
+  color: #000;
+}
+
+/* HOVER */
+.tab-btn:hover {
+  background: #e5e7eb;
+}
+
+@media (max-width: 768px) {
+  .page-header-row {
+    align-items: stretch;
+  }
+
+  .tabs {
+    margin-left: 0;
+    align-self: flex-start;
+  }
+
+  .actividad-card__top {
+    flex-direction: column;
+  }
+
+  .actividad-form {
+    padding: 20px;
+  }
+
+  .actividad-form__link-row {
+    grid-template-columns: 1fr;
+  }
+
+  .actividad-form__actions {
+    justify-content: stretch;
+    flex-direction: column;
+  }
 }

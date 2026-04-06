@@ -34,13 +34,6 @@ interface CreateComentarioDto {
   comentario: string;
 }
 
-interface CreateArchivoDto {
-  convenioId: number;
-  subidoPorId: number;
-  nombreArchivo: string;
-  urlArchivo: string;
-}
-
 type ComentarioResponse = {
   id: number;
   convenioId: number;
@@ -155,10 +148,8 @@ export class ConveniosService {
 
   getComentariosByConvenio(convenioId: string): Observable<ComentarioResponse[]> {
     if (!convenioId) return of([]);
-    const params = new HttpParams().set('convenioId', convenioId);
     return this.http
-      .get<ComentarioResponse[]>(this.comentariosApiUrl, {
-        params,
+      .get<ComentarioResponse[]>(`${this.comentariosApiUrl}/${convenioId}`, {
         headers: this.authService.getAuthHeaders(),
       })
       .pipe(catchError(() => of([])));
@@ -178,8 +169,8 @@ export class ConveniosService {
       );
   }
 
-  addArchivo(convenioId: string, nombreArchivo: string, urlArchivo: string): Observable<ArchivoResponse | null> {
-    if (!convenioId || !nombreArchivo || !urlArchivo) return of(null);
+  addArchivo(convenioId: string, file: File): Observable<ArchivoResponse | null> {
+    if (!convenioId || !file) return of(null);
     const convenioIdNum = Number(convenioId);
     const subidoPorId = Number(this.authService.getCurrentUser()?.id ?? 0);
     if (!Number.isFinite(convenioIdNum) || !subidoPorId) {
@@ -190,18 +181,17 @@ export class ConveniosService {
       return of(null);
     }
 
-    const payload: CreateArchivoDto = {
-      convenioId: convenioIdNum,
-      subidoPorId,
-      nombreArchivo,
-      urlArchivo,
-    };
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('nombreArchivo', file.name);
+    formData.append('convenioId', String(convenioIdNum));
+    formData.append('subidoPorId', String(subidoPorId));
 
     return this.http
       .post<ArchivoResponse>(
         this.archivosApiUrl,
-        payload,
-        { headers: this.authService.getAuthHeaders() },
+        formData,
+        { headers: this.authService.getAuthHeadersWithoutContentType() },
       )
       .pipe(
         catchError((error) => {
@@ -213,10 +203,8 @@ export class ConveniosService {
 
   getArchivosByConvenio(convenioId: string): Observable<ArchivoResponse[]> {
     if (!convenioId) return of([]);
-    const params = new HttpParams().set('convenioId', convenioId);
     return this.http
-      .get<ArchivoResponse[]>(this.archivosApiUrl, {
-        params,
+      .get<ArchivoResponse[]>(`${this.archivosApiUrl}/convenio/${convenioId}`, {
         headers: this.authService.getAuthHeaders(),
       })
       .pipe(catchError(() => of([])));

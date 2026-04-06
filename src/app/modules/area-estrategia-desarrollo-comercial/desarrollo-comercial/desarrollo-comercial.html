@@ -1,33 +1,65 @@
 ﻿<div class="page-container">
-  <header class="page-header">
-    <h2 class="page-title">Desarrollo Comercial</h2>
-    <p class="page-subtitle">Gestión de convenios</p>
-  </header>
+  <div class="page-header-row">
+    <header class="page-header">
+      <h2 class="page-title">Desarrollo Comercial</h2>
+      <p class="page-subtitle">
+        Gestión de {{ vistaActual === 'convenios' ? 'convenios' : 'actividades' }}
+      </p>
+    </header>
+    <div class="tabs">
+      <button
+        class="tab-btn"
+        [class.active]="vistaActual === 'convenios'"
+        (click)="cambiarVista('convenios')"
+      >
+        Convenios
+      </button>
 
-  <div class="top-actions">
+      <button
+        class="tab-btn"
+        [class.active]="vistaActual === 'actividades'"
+        (click)="cambiarVista('actividades')"
+      >
+        Actividades
+      </button>
+    </div>
+  </div>
+  <div class="top-actions" *ngIf="vistaActual === 'convenios' || !mostrandoFormularioActividad">
     <div class="search-box">
       <input
         type="text"
         [(ngModel)]="busqueda"
         (input)="onBuscar()"
-        placeholder="Buscar convenios........."
+        [placeholder]="
+          vistaActual === 'convenios'
+            ? 'Buscar convenios.........'
+            : 'Buscar actividades.........'
+        "
       />
     </div>
     <div class="top-actions__right">
-      <div class="conexion-filter">
+      <div class="conexion-filter" *ngIf="vistaActual === 'convenios'">
         <select [(ngModel)]="filtroConexion" (ngModelChange)="setConexionFiltro($event)">
           <option value="todos">Todos</option>
           <option *ngFor="let con of tiposConexion" [value]="con">{{ con }}</option>
         </select>
       </div>
-      <button class="btn-nuevo" (click)="crearNuevoConvenio()">
+      <div class="conexion-filter" *ngIf="vistaActual === 'actividades'">
+        <select [(ngModel)]="filtroActividad" (ngModelChange)="setFiltroActividad($event)">
+          <option value="todos">Todos</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="proceso">En proceso</option>
+          <option value="firmado">Completada</option>
+        </select>
+      </div>
+      <button class="btn-nuevo" (click)="ejecutarAccionPrincipal()">
         <i class="pi pi-plus"></i>
-        Nuevo Convenio
+        {{ vistaActual === 'convenios' ? 'Nuevo Convenio' : 'Nueva Actividad' }}
       </button>
     </div>
   </div>
 
-  <div class="filters">
+  <div class="filters" *ngIf="vistaActual === 'convenios'">
     <button
       class="chip pendiente"
       [class.active]="estadoSeleccionado === 'pendiente'"
@@ -72,7 +104,7 @@
     </button>
   </div>
 
-  <div class="convenios-list">
+  <div class="convenios-list" *ngIf="vistaActual === 'convenios'">
     <div
       class="convenio-card"
       *ngFor="let convenio of conveniosPaginados"
@@ -149,7 +181,48 @@
     </div>
   </div>
 
-  <div class="paginator" *ngIf="totalPaginas > 1">
+  <div
+    class="actividades-list"
+    *ngIf="vistaActual === 'actividades' && !mostrandoFormularioActividad"
+  >
+    <article class="actividad-card" *ngFor="let actividad of actividadesPaginadas">
+      <div class="actividad-card__top">
+        <div>
+          <h3>{{ actividad.titulo }}</h3>
+          <p>{{ actividad.descripcion }}</p>
+        </div>
+        <div class="actividad-card__actions">
+          <button class="icon-btn ghost" type="button" title="Editar actividad">
+            <i class="pi pi-pencil"></i>
+          </button>
+          <button class="icon-btn ghost danger small" type="button" title="Eliminar actividad">
+            <i class="pi pi-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="actividad-card__meta">
+        <span class="status" [ngClass]="actividad.estado">
+          <i class="pi pi-clock" *ngIf="actividad.estado === 'pendiente'"></i>
+          <i class="pi pi-spinner" *ngIf="actividad.estado === 'proceso'"></i>
+          <i class="pi pi-check-circle" *ngIf="actividad.estado === 'firmado'"></i>
+          {{
+            actividad.estado === 'pendiente'
+              ? 'PENDIENTE'
+              : actividad.estado === 'proceso'
+                ? 'EN PROCESO'
+                : 'COMPLETADA'
+          }}
+        </span>
+        <span class="actividad-fecha">Fecha Límite: {{ actividad.fechaLimite }}</span>
+      </div>
+    </article>
+  </div>
+
+  <div
+    class="paginator"
+    *ngIf="totalPaginas > 1 && (vistaActual === 'convenios' || !mostrandoFormularioActividad)"
+  >
     <button class="page-btn" (click)="prevPage()" [disabled]="page === 1">
       <span class="arrow">&#x2039;</span>
       Anterior
@@ -170,6 +243,107 @@
       Siguiente
       <span class="arrow">&#x203a;</span>
     </button>
+  </div>
+
+  <div
+    class="actividad-modal-backdrop"
+    *ngIf="vistaActual === 'actividades' && mostrandoFormularioActividad"
+  >
+    <section class="actividad-form">
+      <div class="actividad-form__header">
+        <h2 class="actividad-form__title">Nueva Actividad</h2>
+        <button type="button" class="actividad-form__close" (click)="cancelarFormularioActividad()">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <label class="actividad-form__field">
+        <span>Título</span>
+        <input
+          type="text"
+          [(ngModel)]="actividadEnEdicion.titulo"
+          placeholder="Nombre de la actividad"
+        />
+      </label>
+
+      <label class="actividad-form__field">
+        <span>Descripción</span>
+        <textarea
+          [(ngModel)]="actividadEnEdicion.descripcion"
+          rows="4"
+          placeholder="Descripción detallada de la actividad"
+        ></textarea>
+      </label>
+
+      <div class="actividad-form__field">
+        <span>Estado</span>
+        <div class="actividad-form__states">
+          <button
+            type="button"
+            class="activity-state-chip pendiente"
+            [class.active]="actividadEnEdicion.estado === 'pendiente'"
+            (click)="actividadEnEdicion.estado = 'pendiente'"
+          >
+            Pendiente
+          </button>
+          <button
+            type="button"
+            class="activity-state-chip proceso"
+            [class.active]="actividadEnEdicion.estado === 'proceso'"
+            (click)="actividadEnEdicion.estado = 'proceso'"
+          >
+            En proceso
+          </button>
+          <button
+            type="button"
+            class="activity-state-chip firmado"
+            [class.active]="actividadEnEdicion.estado === 'firmado'"
+            (click)="actividadEnEdicion.estado = 'firmado'"
+          >
+            Completado
+          </button>
+        </div>
+      </div>
+
+      <label class="actividad-form__field actividad-form__field--date">
+        <span>Fecha Límite</span>
+        <input type="date" [(ngModel)]="actividadEnEdicion.fechaLimite" />
+      </label>
+
+      <div class="actividad-form__field">
+        <span>Enlaces</span>
+        <small>Agrega los links de trabajo</small>
+
+        <div
+          class="actividad-form__link-row"
+          *ngFor="let enlace of actividadEnEdicion.enlaces; let i = index"
+        >
+          <input
+            type="text"
+            [(ngModel)]="actividadEnEdicion.enlaces[i].nombre"
+            placeholder="Nombre del documento"
+          />
+          <input
+            type="url"
+            [(ngModel)]="actividadEnEdicion.enlaces[i].url"
+            placeholder="https://docs.google.com/..."
+          />
+          <button type="button" class="activity-link-add" (click)="agregarEnlaceActividad()">
+            <i class="pi pi-plus"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="actividad-form__actions">
+        <button type="button" class="activity-cancel" (click)="cancelarFormularioActividad()">
+          Cancelar
+        </button>
+        <button type="button" class="activity-submit" (click)="guardarActividad()">
+          <i class="pi pi-save"></i>
+          Crear Actividad
+        </button>
+      </div>
+    </section>
   </div>
 
 
