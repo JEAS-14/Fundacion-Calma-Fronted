@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
+import { ComunidadService } from '../../services/comunidad.service';
 
 // Estructura de datos del contacto
 export interface Contacto {
@@ -12,6 +12,8 @@ export interface Contacto {
   rol: string;
   area: string;
   iniciales: string;
+  email?: string;
+  telefono?: string;
   esFavorito?: boolean;
 }
 
@@ -28,9 +30,7 @@ export class ComunidadComponent implements OnInit {
   mostrarModal: boolean = false;
   contactoForm: Contacto = { nombre: '', rol: '', area: '', iniciales: '' };
 
-  private apiUrl = 'http://localhost:3005/api/comunidad';
-
-  constructor(private router: Router, private http: HttpClient) { }
+  constructor(private router: Router, private comunidadService: ComunidadService) { }
 
   ngOnInit() {
     this.obtenerContactos();
@@ -39,12 +39,12 @@ export class ComunidadComponent implements OnInit {
   // [GET] Obtener lista de contactos
   obtenerContactos() {
     console.log('Llamando a la API para obtener contactos...');
-    this.http.get<Contacto[]>(`${this.apiUrl}/contactos`).subscribe({
-      next: (data) => {
+    this.comunidadService.getContactos().subscribe({
+      next: (data: Contacto[]) => {
         this.contactos = data;
         console.log('Contactos cargados desde el backend:', data);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error('Error al obtener contactos:', err);
       }
     });
@@ -73,8 +73,38 @@ export class ComunidadComponent implements OnInit {
     }
   }
 
-  enviarMensaje(contacto: Contacto) {
-    this.router.navigate(['/comunicaciones']);
+  abrirChat(contacto: Contacto) {
+    if (!contacto.id) {
+      alert('No se puede iniciar el chat: faltan datos del contacto.');
+      return;
+    }
+
+    this.router.navigate(['/comunicaciones'], {
+      queryParams: {
+        chatContactoId: contacto.id,
+        chatContactoNombre: contacto.nombre
+      }
+    });
+  }
+
+  enviarCorreo(contacto: Contacto) {
+    if (contacto.email) {
+      window.location.href = `mailto:${contacto.email}`;
+      return;
+    }
+
+    this.abrirChat(contacto);
+  }
+
+  iniciarLlamada(contacto: Contacto) {
+    if (contacto.telefono) {
+      window.location.href = `tel:${contacto.telefono}`;
+      return;
+    }
+
+    alert(
+      `Llamada en camino: podríamos integrar voz o WebRTC aquí para conectarte con ${contacto.nombre}.`
+    );
   }
 
   toggleFavorito(contacto: Contacto) {

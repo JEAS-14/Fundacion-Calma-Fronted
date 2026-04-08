@@ -44,9 +44,24 @@ export class ComunidadService {
     return this.http.get<Area[]>(url, { headers: this.getHeaders() });
   }
 
+  getContactos(): Observable<Contacto[]> {
+    return this.http.get<Contacto[]>(`${this.apiUrl}/contactos`, {
+      headers: this.getHeaders()
+    });
+  }
+
   verificarAcceso(id: number): Observable<AccesoArea> {
     return this.http.get<AccesoArea>(`${this.apiUrl}/areas/${id}/acceso`, {
       headers: this.getHeaders()
     });
   }
+}
+
+export interface Contacto {
+  id?: number;
+  nombre: string;
+  rol: string;
+  area: string;
+  iniciales: string;
+  esFavorito?: boolean;
 }
