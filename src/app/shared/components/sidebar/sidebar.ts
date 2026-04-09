@@ -115,6 +115,30 @@ export class SidebarComponent implements OnInit {
     return 'pi pi-briefcase'; // Icono por defecto
   }
 
+  getAreaLabel(area: Area | any): string {
+    if (!area?.nombre) return 'Área';
+
+    const name = area.nombre.toLowerCase();
+    const subareas = Array.isArray(area.subareas) ? area.subareas : [];
+    const subareaNames: string[] = subareas.map((sub: Area | any) => (sub?.nombre || '').toLowerCase());
+    const tieneEstrategia = subareaNames.some((sub: string) => sub.includes('estrategia'));
+    const tieneDesarrollo = subareaNames.some((sub: string) => sub.includes('desarrollo'));
+
+    if ((name.includes('comercial') && tieneEstrategia && tieneDesarrollo) || (name.includes('estrategia') && name.includes('desarrollo'))) {
+      return 'Estrategia y Desarrollo Comercial';
+    }
+
+    if (name.includes('estrategia')) {
+      return 'Estrategia Comercial';
+    }
+
+    if (name.includes('desarrollo')) {
+      return 'Desarrollo Comercial';
+    }
+
+    return area.nombre;
+  }
+
   cerrarSesion(): void {
     this.authService.logout();
     this.router.navigate(['/login']);

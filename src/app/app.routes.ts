@@ -11,7 +11,7 @@ import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout';
 // Nuevos componentes importados
 import { ComunicacionesComponent } from './modules/comunicaciones/pages/comunicaciones/comunicaciones.component';
 import { ComunidadComponent } from './modules/comunidad/pages/comunidad/comunidad.component';
-import { RepositorioComponent } from './modules/repositorio/pages/repositorio/repositorio.component';
+import { Repositorio } from './modules/repositorio/pages/repositorio/repositorio';
 import { Notificaciones } from './modules/notificaciones/pages/notificaciones/notificaciones';
 import { SalasTrabajo } from './modules/salas-trabajo/pages/salas-trabajo/salas-trabajo';
 
@@ -98,7 +98,7 @@ export const routes: Routes = [
       },
       {
         path: 'repositorio',
-        component: RepositorioComponent
+        component: Repositorio
       },
       {
         path: 'salas-trabajo',

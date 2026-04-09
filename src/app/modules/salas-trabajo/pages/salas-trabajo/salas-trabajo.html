@@ -1,1 +1,26 @@
-<p>salas-trabajo works!</p>
+<div class="container">
+
+  <h2>Sala General - Fundación Calma</h2>
+
+  <div class="card principal">
+    <span>{{ salaGeneral.nombre }}</span>
+    <button (click)="entrar(salaGeneral.link)">Entrar</button>
+  </div>
+
+  <div class="equipos">
+
+    <h3>Salas de Equipos</h3>
+
+    <div class="grupo" *ngFor="let grupo of grupos">
+      <h4>{{ grupo.area }}</h4>
+
+      <div class="card" *ngFor="let sala of grupo.salas">
+        <span>{{ sala.nombre }}</span>
+        <button (click)="entrar(sala.link)">Entrar</button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
