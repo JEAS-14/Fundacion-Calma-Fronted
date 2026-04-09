@@ -11,7 +11,6 @@ import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout';
 // Nuevos componentes importados
 import { ComunicacionesComponent } from './modules/comunicaciones/pages/comunicaciones/comunicaciones.component';
 import { ComunidadComponent } from './modules/comunidad/pages/comunidad/comunidad.component';
-import { Repositorio } from './modules/repositorio/pages/repositorio/repositorio';
 import { Notificaciones } from './modules/notificaciones/pages/notificaciones/notificaciones';
 import { SalasTrabajo } from './modules/salas-trabajo/pages/salas-trabajo/salas-trabajo';
 
@@ -95,10 +94,6 @@ export const routes: Routes = [
       {
         path: 'comunidad-calma',
         component: ComunidadComponent
-      },
-      {
-        path: 'repositorio',
-        component: Repositorio
       },
       {
         path: 'salas-trabajo',
