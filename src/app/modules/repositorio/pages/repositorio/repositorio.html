@@ -1,0 +1,130 @@
+<div class="contenedor">
+
+  <h2>Repositorio</h2>
+
+  <div class="grid">
+    <div 
+      class="card"
+      *ngFor="let bloque of bloques"
+      (click)="seleccionarBloque(bloque)"
+    >
+      <div class="icono">{{ bloque.icono }}</div>
+      <h3>{{ bloque.titulo }}</h3>
+
+      <p *ngIf="!bloque.titulo.includes('Redes')">
+        {{ bloque.documentos.length }} documentos
+      </p>
+
+      <p *ngIf="bloque.titulo.includes('Redes')">
+        {{ bloque.documentos.length }} redes
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal" *ngIf="bloqueSeleccionado">
+
+  <div class="modal-content">
+
+  <div class="modal-header">
+    <h3>{{ bloqueSeleccionado.titulo }}</h3>
+
+    <button class="btn-close" (click)="cerrarModal()">
+      ✕
+    </button>
+  </div>
+
+    <div class="form">
+
+      <ng-container *ngIf="esRedesSociales(); else docsForm">
+
+        <input [(ngModel)]="nuevoNombre" placeholder="Nombre (Instagram...)" />
+        <input [(ngModel)]="nuevoLink" placeholder="https://..." />
+
+        <button class="btn-add" (click)="agregarRedSocial()">
+          + Agregar red
+        </button>
+
+      </ng-container>
+
+      <ng-template #docsForm>
+
+        <input type="file" (change)="onFileSelected($event)" />
+
+        <button class="btn-add" (click)="agregarDocumento()">
+          + Subir documento
+        </button>
+
+      </ng-template>
+
+    </div>
+
+    <div class="list">
+
+      <ng-container *ngIf="esRedesSociales(); else docsList">
+
+        <a 
+          class="item"
+          *ngFor="let red of bloqueSeleccionado.documentos; let i = index"
+          [href]="red.url"
+          target="_blank"
+        >
+
+          <div class="item-left">
+
+            <div class="icon">
+              <i class="fa-brands" [ngClass]="red.icono"></i>
+            </div>
+
+            <div class="info">
+              <span class="title">{{ red.nombre }}</span>
+              <span class="subtitle">{{ red.url }}</span>
+            </div>
+
+          </div>
+
+          <button 
+            class="delete"
+            (click)="eliminarRed(i); $event.preventDefault(); $event.stopPropagation();"
+          >
+            Eliminar
+          </button>
+
+        </a>
+
+      </ng-container>
+
+      <ng-template #docsList>
+
+        <div 
+          class="item"
+          *ngFor="let doc of bloqueSeleccionado.documentos; let i = index"
+        >
+
+          <div class="item-left">
+
+            <div class="icon doc">📄</div>
+
+            <div class="info">
+              <a [href]="doc.url" target="_blank" class="doc-link">
+                {{ doc.nombre }}
+              </a>
+              <span class="subtitle">Documento</span>
+            </div>
+
+          </div>
+
+          <button class="delete" (click)="eliminarDocumento(i)">
+            Eliminar
+          </button>
+
+        </div>
+
+      </ng-template>
+
+    </div>
+
+  </div>
+
+</div>
