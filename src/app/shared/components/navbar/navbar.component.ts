@@ -1,7 +1,20 @@
-import { Component, ChangeDetectionStrategy, signal, inject, OnInit, HostListener } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  signal,
+  inject,
+  OnInit,
+  HostListener,
+  OnDestroy
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { interval, Subscription } from 'rxjs';
+
 import { AuthService } from '../../../modules/auth/services/auth.service';
-import { NotificacionesService, Notificacion } from '../../../modules/notificaciones/services/notificaciones.service';
+import {
+  NotificacionesService,
+  Notificacion
+} from '../../../modules/notificaciones/services/notificaciones.service';
 
 @Component({
   selector: 'app-navbar',
@@ -11,7 +24,7 @@ import { NotificacionesService, Notificacion } from '../../../modules/notificaci
   styleUrl: './navbar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent implements OnInit, OnDestroy {
 
   isDarkMode = signal(false);
 
@@ -25,9 +38,25 @@ export class NavbarComponent implements OnInit {
   notificaciones = signal<Notificacion[]>([]);
   mostrarDropdown = signal(false);
 
+  notificacionSeleccionada: Notificacion | null = null;
+  private cambiosSub?: Subscription;
+  private pollingSub?: Subscription;
+
   ngOnInit() {
+    this.inicializarTema();
     this.cargarDatosUsuario();
     this.cargarNotificaciones();
+    this.cambiosSub = this.notifService.cambios$.subscribe(() => {
+      this.cargarNotificaciones();
+    });
+    this.pollingSub = interval(15000).subscribe(() => {
+      this.cargarNotificaciones();
+    });
+  }
+
+  ngOnDestroy() {
+    this.cambiosSub?.unsubscribe();
+    this.pollingSub?.unsubscribe();
   }
 
   cargarDatosUsuario() {
@@ -35,11 +64,12 @@ export class NavbarComponent implements OnInit {
 
     if (user) {
       const nombreCompleto = user.nombre || 'Usuario';
-      this.nombreUsuario.set(nombreCompleto);
 
-      this.rolUsuario.set(user.rol ? user.rol : 'Usuario');
+      this.nombreUsuario.set(nombreCompleto);
+      this.rolUsuario.set(user.rol || 'Usuario');
 
       let iniciales = nombreCompleto.charAt(0).toUpperCase();
+
       if ((user as any).apellido) {
         iniciales += (user as any).apellido.charAt(0).toUpperCase();
       } else {
@@ -54,42 +84,126 @@ export class NavbarComponent implements OnInit {
   }
 
   cargarNotificaciones() {
-    this.notifService.listar().subscribe(data => {
-      this.notificaciones.set(data);
+    this.notifService.listar().subscribe({
+      next: (data: Notificacion[]) => {
+        this.notificaciones.set(data);
+      },
+      error: (err) => console.error(err)
     });
   }
 
   toggleDropdown() {
     this.mostrarDropdown.update(v => !v);
+
+    if (this.mostrarDropdown()) {
+      this.cargarNotificaciones();
+    }
   }
 
-  marcarLeida(n: Notificacion) {
+  abrirNotificacion(n: Notificacion) {
+    this.notificacionSeleccionada = n;
+    this.mostrarDropdown.set(false);
+
     if (!n.leido) {
-      this.notifService.marcarLeido(n.id, true).subscribe(() => {
-        const actualizadas = this.notificaciones().map(notif =>
-          notif.id === n.id ? { ...notif, leido: true } : notif
-        );
-        this.notificaciones.set(actualizadas);
+      this.notifService.marcarLeido(n.id, true).subscribe({
+        next: () => {
+          this.notificaciones.update(lista =>
+            lista.map(notif =>
+              notif.id === n.id
+                ? { ...notif, leido: true }
+                : notif
+            )
+          );
+          this.notifService.notificarCambio();
+        },
+        error: (err) => console.error(err)
       });
     }
+  }
+
+  cerrarDetalleNotificacion() {
+    this.notificacionSeleccionada = null;
   }
 
   noLeidas() {
     return this.notificaciones().filter(n => !n.leido).length;
   }
 
+  mensajePrincipal(n: Notificacion | null): string {
+    if (!n?.mensaje) {
+      return '';
+    }
+
+    return n.mensaje
+      .split('\n')
+      .filter((linea) => !this.esLineaFirma(linea) && !this.esLineaEnlace(linea))
+      .join('\n')
+      .trim();
+  }
+
+  resumenMensaje(n: Notificacion): string {
+    const mensaje = this.mensajePrincipal(n);
+    return mensaje.length > 105 ? `${mensaje.slice(0, 105).trim()}...` : mensaje;
+  }
+
+  firmaNotificacion(n: Notificacion | null): string | null {
+    const linea = this.obtenerLinea(n, (value) => this.esLineaFirma(value));
+    return linea ? linea.replace(/^Atte\.?\s*/i, '').trim() : null;
+  }
+
+  enlaceNotificacion(n: Notificacion | null): string | null {
+    const linea = this.obtenerLinea(n, (value) => this.esLineaEnlace(value));
+    const enlace = linea ? linea.replace(/^Enlace:\s*/i, '').trim() : null;
+    return enlace || null;
+  }
+
+  etiquetaTipo(n: Notificacion): string {
+    return n.tipo === 'sistema' ? 'Sistema' : 'Comunicado';
+  }
+
+  private obtenerLinea(
+    n: Notificacion | null,
+    predicate: (linea: string) => boolean,
+  ): string | null {
+    return n?.mensaje?.split('\n').find((linea) => predicate(linea.trim())) ?? null;
+  }
+
+  private esLineaFirma(linea: string): boolean {
+    return /^Atte\.?\s+/i.test(linea.trim());
+  }
+
+  private esLineaEnlace(linea: string): boolean {
+    return /^Enlace:\s*/i.test(linea.trim());
+  }
+
   @HostListener('document:click', ['$event'])
-  cerrarDropdown(event: any) {
-    if (!event.target.closest('.notif-container')) {
+  cerrarDropdown(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+
+    if (!target.closest('.notif-container')) {
       this.mostrarDropdown.set(false);
     }
   }
 
   toggleDarkMode() {
     const element = document.querySelector('html');
+
     if (element) {
       element.classList.toggle('app-dark');
       this.isDarkMode.set(element.classList.contains('app-dark'));
+      localStorage.setItem('calma-theme', this.isDarkMode() ? 'dark' : 'light');
     }
+  }
+
+  private inicializarTema(): void {
+    const element = document.querySelector('html');
+    const temaGuardado = localStorage.getItem('calma-theme');
+
+    if (!element) {
+      return;
+    }
+
+    element.classList.toggle('app-dark', temaGuardado === 'dark');
+    this.isDarkMode.set(element.classList.contains('app-dark'));
   }
 }

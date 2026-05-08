@@ -70,11 +70,24 @@ export class AuthService {
   }
 
   getAuthHeaders(): HttpHeaders {
+    return this.buildAuthHeaders(true);
+  }
+
+  getAuthHeadersWithoutContentType(): HttpHeaders {
+    return this.buildAuthHeaders(false);
+  }
+
+  private buildAuthHeaders(includeContentType: boolean): HttpHeaders {
     const token = this.getToken();
-    return new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : ''
-    });
+    const headers: Record<string, string> = {
+      Authorization: token ? `Bearer ${token}` : '',
+    };
+
+    if (includeContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    return new HttpHeaders(headers);
   }
 
 }

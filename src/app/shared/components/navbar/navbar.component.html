@@ -7,44 +7,75 @@
 
   <div class="header-right">
 
-    <button 
-      class="theme-toggle" 
+    <button
+      class="theme-toggle"
       (click)="toggleDarkMode()"
-      [attr.aria-label]="isDarkMode() ? 'Modo Claro' : 'Modo Oscuro'"
     >
-      <i 
-        class="pi" 
-        [class.pi-sun]="isDarkMode()" 
-        [class.pi-moon]="!isDarkMode()">
-      </i>
+      <i
+        class="pi"
+        [class.pi-sun]="isDarkMode()"
+        [class.pi-moon]="!isDarkMode()"
+      ></i>
     </button>
 
     <div class="notif-container">
 
-      <div class="notification" (click)="toggleDropdown()">
+      <button
+        class="notification"
+        type="button"
+        (click)="toggleDropdown(); $event.stopPropagation()"
+      >
         <i class="pi pi-bell"></i>
 
-        <span *ngIf="noLeidas() > 0" class="badge">
+        <span
+          *ngIf="noLeidas() > 0"
+          class="badge"
+        >
           {{ noLeidas() }}
         </span>
-      </div>
+      </button>
 
-      <div class="dropdown" *ngIf="mostrarDropdown()">
+      <div
+        class="dropdown"
+        *ngIf="mostrarDropdown()"
+        (click)="$event.stopPropagation()"
+      >
 
-        <h4>Notificaciones</h4>
-
-        <div 
-          class="item"
-          *ngFor="let n of notificaciones()"
-          [class.leida]="n.leido"
-          (click)="marcarLeida(n)"
-        >
-          <strong>{{ n.titulo }}</strong>
-          <p>{{ n.mensaje }}</p>
+        <div class="dropdown-header">
+          <h4>Notificaciones</h4>
+          <span>{{ noLeidas() }} pendientes</span>
         </div>
 
-        
-        <div class="empty" *ngIf="notificaciones().length === 0">
+        <button
+          class="item"
+          type="button"
+          *ngFor="let n of notificaciones()"
+          [class.leida]="n.leido"
+          (click)="abrirNotificacion(n)"
+        >
+          <div class="item-icon" [class.sistema]="n.tipo === 'sistema'">
+            {{ n.tipo === 'sistema' ? '!' : 'C' }}
+          </div>
+
+          <div class="item-content">
+            <div class="item-top">
+              <strong>{{ n.titulo }}</strong>
+              <small>{{ etiquetaTipo(n) }}</small>
+            </div>
+
+            <p>{{ resumenMensaje(n) }}</p>
+
+            <div class="item-meta">
+              <span *ngIf="enlaceNotificacion(n)">Con enlace</span>
+              <span *ngIf="firmaNotificacion(n)">Atte. {{ firmaNotificacion(n) }}</span>
+            </div>
+          </div>
+        </button>
+
+        <div
+          class="empty"
+          *ngIf="notificaciones().length === 0"
+        >
           No hay notificaciones
         </div>
 
@@ -68,3 +99,65 @@
   </div>
 
 </header>
+
+<div
+  *ngIf="notificacionSeleccionada"
+  class="modal-notificacion"
+  (click)="cerrarDetalleNotificacion()"
+>
+  <div
+    class="modal-notificacion-box"
+    (click)="$event.stopPropagation()"
+  >
+
+    <div class="modal-notificacion-header">
+      <h3>{{ notificacionSeleccionada.titulo }}</h3>
+
+      <button
+        type="button"
+        (click)="cerrarDetalleNotificacion()"
+      >
+        x
+      </button>
+    </div>
+
+    <div
+      class="modal-notificacion-body"
+      [class.con-imagen]="notificacionSeleccionada.imagen"
+    >
+      <div class="modal-copy">
+        <div class="modal-message">
+          {{ mensajePrincipal(notificacionSeleccionada) }}
+        </div>
+
+        <a
+          *ngIf="enlaceNotificacion(notificacionSeleccionada)"
+          [href]="enlaceNotificacion(notificacionSeleccionada)!"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="modal-link"
+        >
+          Abrir enlace relacionado
+        </a>
+
+        <div
+          *ngIf="firmaNotificacion(notificacionSeleccionada)"
+          class="modal-signature"
+        >
+          Atte. {{ firmaNotificacion(notificacionSeleccionada) }}
+        </div>
+
+        <small>
+          {{ etiquetaTipo(notificacionSeleccionada) }}
+        </small>
+      </div>
+
+      <img
+        *ngIf="notificacionSeleccionada.imagen"
+        [src]="notificacionSeleccionada.imagen"
+        alt=""
+      />
+    </div>
+
+  </div>
+</div>
