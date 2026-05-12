@@ -77,7 +77,11 @@ type ComentarioResponse = {
   id: number;
   convenioId: number;
   usuarioId: number;
+  usuarioNombre?: string | null;
   comentario: string;
+  fechaCreacion?: string;
+  createdAt?: string;
+  fecha?: string;
 };
 
 type ArchivoResponse = {
@@ -145,9 +149,21 @@ export class ConveniosService {
 
   deleteConvenio(convenioId: string): Observable<void> {
     if (!convenioId) return throwError(() => new Error('Convenio sin id'));
+    const usuario = this.authService.getCurrentUser();
+    const params: Record<string, string> = {};
+
+    if (usuario?.id) {
+      params['usuarioId'] = String(usuario.id);
+    }
+
+    if (usuario?.nombre?.trim()) {
+      params['usuarioNombre'] = usuario.nombre.trim();
+    }
+
     return this.http
       .delete<void>(`${this.apiUrl}/${convenioId}`, {
         headers: this.authService.getAuthHeaders(),
+        params,
       })
       .pipe(
         catchError((error) => {

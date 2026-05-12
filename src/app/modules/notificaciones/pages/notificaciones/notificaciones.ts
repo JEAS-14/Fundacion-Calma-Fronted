@@ -2,7 +2,9 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
+import { AuthService } from '../../../auth/services/auth.service';
 import {
   Notificacion,
   NotificacionesService,
@@ -10,6 +12,7 @@ import {
 } from '../../services/notificaciones.service';
 
 type TipoToast = 'success' | 'error';
+type FiltroNotificaciones = TipoNotificacion | 'favoritos';
 
 @Component({
   selector: 'app-notificaciones',
@@ -20,11 +23,17 @@ type TipoToast = 'success' | 'error';
 })
 export class Notificaciones implements OnInit, OnDestroy {
   private service = inject(NotificacionesService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
   private notificacionTimeout: ReturnType<typeof setTimeout> | null = null;
 
   mostrarConfirmacion = false;
   idAEliminar: number | null = null;
-  filtroSeleccionado: TipoNotificacion = 'comunicados';
+  filtroSeleccionado: FiltroNotificaciones = 'comunicados';
+  filtroAntesFavoritos: TipoNotificacion = 'comunicados';
+  fechaDesde = '';
+  fechaHasta = '';
+  mostrarFiltroFecha = false;
   notificacionToast: { tipo: TipoToast; mensaje: string } | null = null;
 
   notificaciones: Notificacion[] = [];
@@ -67,11 +76,48 @@ export class Notificaciones implements OnInit, OnDestroy {
   }
 
   get notificacionesFiltradas(): Notificacion[] {
-    return this.notificaciones.filter((n) => n.tipo === this.filtroSeleccionado);
+    const dentroDeFechas = (n: Notificacion) => this.cumpleFiltroFecha(n);
+
+    if (this.filtroSeleccionado === 'favoritos') {
+      return this.notificaciones.filter((n) =>
+        n.favorito && dentroDeFechas(n),
+      );
+    }
+
+    return this.notificaciones.filter((n) =>
+      n.tipo === this.filtroSeleccionado && dentroDeFechas(n),
+    );
   }
 
-  cambiarFiltro(filtro: TipoNotificacion): void {
+  get puedeCrearNotificacion(): boolean {
+    return this.authService.isAdmin() || this.authService.isDirector();
+  }
+
+  cambiarFiltro(filtro: FiltroNotificaciones): void {
+    if (filtro === 'favoritos') {
+      if (this.filtroSeleccionado === 'favoritos') {
+        this.filtroSeleccionado = this.filtroAntesFavoritos;
+        return;
+      }
+
+      this.filtroAntesFavoritos = this.filtroSeleccionado;
+    }
+
     this.filtroSeleccionado = filtro;
+
+    if (filtro !== 'favoritos') {
+      this.filtroAntesFavoritos = filtro;
+    }
+  }
+
+  limpiarFiltroFecha(): void {
+    this.fechaDesde = '';
+    this.fechaHasta = '';
+    this.mostrarFiltroFecha = false;
+  }
+
+  toggleFiltroFecha(): void {
+    this.mostrarFiltroFecha = !this.mostrarFiltroFecha;
   }
 
   abrirDetalle(n: Notificacion): void {
@@ -108,12 +154,32 @@ export class Notificaciones implements OnInit, OnDestroy {
     });
   }
 
+  toggleFavorito(n: Notificacion, event?: Event): void {
+    event?.stopPropagation();
+    const nuevoEstado = !n.favorito;
+
+    this.notificaciones = this.notificaciones.map((item) =>
+      item.id === n.id ? { ...item, favorito: nuevoEstado } : item,
+    );
+
+    this.service.marcarFavorito(n.id, nuevoEstado).subscribe({
+      next: () => this.service.notificarCambio(),
+      error: (err) => {
+        console.error(err);
+        this.notificaciones = this.notificaciones.map((item) =>
+          item.id === n.id ? { ...item, favorito: !nuevoEstado } : item,
+        );
+        this.mostrarNotificacion('error', 'No se pudo actualizar favorito.');
+      },
+    });
+  }
+
   eliminarNotificacion(id: number): void {
     this.service.eliminar(id).subscribe({
       next: () => {
         this.notificaciones = this.notificaciones.filter((n) => n.id !== id);
         this.service.notificarCambio();
-        this.mostrarNotificacion('success', 'Notificacion eliminada correctamente.');
+        this.mostrarNotificacion('success', 'Notificacion eliminada.');
       },
       error: (err) => {
         console.error(err);
@@ -123,6 +189,11 @@ export class Notificaciones implements OnInit, OnDestroy {
   }
 
   toggleFormulario(): void {
+    if (!this.puedeCrearNotificacion) {
+      this.mostrarNotificacion('error', 'Solo el administrador o director pueden crear notificaciones.');
+      return;
+    }
+
     this.mostrarFormulario = !this.mostrarFormulario;
 
     if (this.mostrarFormulario) {
@@ -154,8 +225,13 @@ export class Notificaciones implements OnInit, OnDestroy {
   }
 
   guardarNotificacion(): void {
+    if (!this.puedeCrearNotificacion) {
+      this.mostrarNotificacion('error', 'Solo el administrador o director pueden crear notificaciones.');
+      return;
+    }
+
     if (!this.form.titulo.trim() || !this.form.mensaje.trim()) {
-      this.mostrarNotificacion('error', 'Completa titulo y descripcion.');
+      this.mostrarNotificacion('error', 'Completa título y descripción.');
       return;
     }
 
@@ -242,9 +318,33 @@ export class Notificaciones implements OnInit, OnDestroy {
 
     return n.mensaje
       .split('\n')
-      .filter((linea) => !this.esLineaFirma(linea) && !this.esLineaEnlace(linea))
+      .filter((linea) =>
+        !this.esLineaFirma(linea)
+        && !this.esLineaEnlace(linea)
+        && !this.esLineaSistema(linea)
+        && !this.esLineaCambios(linea)
+      )
       .join('\n')
       .trim();
+  }
+
+  cambiosSistema(n: Notificacion | null): string[] {
+    if (!this.esSistema(n) || !n?.mensaje) {
+      return [];
+    }
+
+    const lineas = n.mensaje.split('\n').map((linea) => linea.trim());
+    const indice = lineas.findIndex((linea) => /^Cambios realizados:\s*$/i.test(linea));
+
+    if (indice === -1) {
+      return [];
+    }
+
+    return lineas
+      .slice(indice + 1)
+      .filter((linea) => linea.startsWith('- '))
+      .map((linea) => linea.replace(/^-\s*/, '').trim())
+      .filter(Boolean);
   }
 
   firmaNotificacion(n: Notificacion | null): string | null {
@@ -271,6 +371,12 @@ export class Notificaciones implements OnInit, OnDestroy {
   }
 
   apartadoSistema(n: Notificacion | null): string {
+    const apartado = this.valorSistema(n, 'Apartado');
+
+    if (apartado) {
+      return apartado;
+    }
+
     const texto = `${n?.titulo ?? ''} ${n?.mensaje ?? ''}`.toLowerCase();
 
     if (texto.includes('convenio')) {
@@ -290,6 +396,38 @@ export class Notificaciones implements OnInit, OnDestroy {
     }
 
     return 'Sistema';
+  }
+
+  accionSistema(n: Notificacion | null): string {
+    return this.valorSistema(n, 'Accion') ?? this.inferirAccionSistema(n);
+  }
+
+  usuarioSistema(n: Notificacion | null): string | null {
+    return this.valorSistema(n, 'Usuario');
+  }
+
+  origenSistema(n: Notificacion | null): string {
+    return this.valorSistema(n, 'Origen') ?? 'Accion del sistema';
+  }
+
+  rutaSistema(n: Notificacion | null): string | null {
+    return this.valorSistema(n, 'Ruta') ?? this.inferirRutaSistema(n);
+  }
+
+  textoBotonSistema(n: Notificacion | null): string {
+    const apartado = this.apartadoSistema(n);
+    return apartado && apartado !== 'Sistema' ? `Ir a ${apartado}` : 'Ir al apartado';
+  }
+
+  navegarSistema(n: Notificacion | null): void {
+    const ruta = this.rutaSistema(n);
+
+    if (!ruta) {
+      return;
+    }
+
+    this.cerrarModal();
+    void this.router.navigateByUrl(ruta);
   }
 
   private construirMensaje(): string {
@@ -332,7 +470,109 @@ export class Notificaciones implements OnInit, OnDestroy {
     return /^Enlace:\s*/i.test(value) || /^https?:\/\/\S+$/i.test(value);
   }
 
+  private esLineaSistema(linea: string): boolean {
+    return /^(Apartado|Accion|Ruta|Usuario|Origen):\s*/i.test(linea.trim());
+  }
+
+  private esLineaCambios(linea: string): boolean {
+    const value = linea.trim();
+    return /^Cambios realizados:\s*$/i.test(value) || /^-\s+/.test(value);
+  }
+
   private extraerUrl(texto: string): string | null {
     return texto.match(/https?:\/\/\S+/i)?.[0] ?? null;
+  }
+
+  private valorSistema(n: Notificacion | null, clave: string): string | null {
+    const linea = this.obtenerLinea(n, (value) =>
+      new RegExp(`^${clave}:\\s*`, 'i').test(value),
+    );
+
+    return linea ? linea.replace(new RegExp(`^${clave}:\\s*`, 'i'), '').trim() : null;
+  }
+
+  private inferirAccionSistema(n: Notificacion | null): string {
+    const texto = `${n?.titulo ?? ''} ${n?.mensaje ?? ''}`.toLowerCase();
+
+    if (texto.includes('elimin')) {
+      return 'Eliminación';
+    }
+
+    if (texto.includes('agreg') || texto.includes('cre')) {
+      return 'Creación';
+    }
+
+    if (texto.includes('venc')) {
+      return 'Aviso automatico';
+    }
+
+    return 'Evento del sistema';
+  }
+
+  private inferirRutaSistema(n: Notificacion | null): string | null {
+    const apartado = this.apartadoSistema(n).toLowerCase();
+
+    if (apartado.includes('convenio') || apartado.includes('desarrollo')) {
+      return '/dashboard/director-dashboard/desarrollo-comercial';
+    }
+
+    if (apartado.includes('estrategia')) {
+      return '/dashboard/director-dashboard/estrategia-comercial';
+    }
+
+    if (apartado.includes('analisis') || apartado.includes('análisis')) {
+      return '/dashboard/director-dashboard/analisis-datos';
+    }
+
+    if (apartado.includes('repositorio')) {
+      return '/repositorio';
+    }
+
+    if (apartado.includes('usuario')) {
+      return '/dashboard/admin-dashboard/usuarios';
+    }
+
+    return null;
+  }
+
+  private cumpleFiltroFecha(n: Notificacion): boolean {
+    if (!this.fechaDesde && !this.fechaHasta) {
+      return true;
+    }
+
+    if (!n.creado_at) {
+      return false;
+    }
+
+    const fechaNotificacion = new Date(n.creado_at);
+
+    if (Number.isNaN(fechaNotificacion.getTime())) {
+      return false;
+    }
+
+    const desde = this.fechaDesde ? this.inicioDia(this.fechaDesde) : null;
+    const hasta = this.fechaHasta ? this.finDia(this.fechaHasta) : null;
+
+    if (desde && fechaNotificacion < desde) {
+      return false;
+    }
+
+    if (hasta && fechaNotificacion > hasta) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private inicioDia(fecha: string): Date {
+    const value = new Date(`${fecha}T00:00:00`);
+    value.setHours(0, 0, 0, 0);
+    return value;
+  }
+
+  private finDia(fecha: string): Date {
+    const value = new Date(`${fecha}T23:59:59`);
+    value.setHours(23, 59, 59, 999);
+    return value;
   }
 }

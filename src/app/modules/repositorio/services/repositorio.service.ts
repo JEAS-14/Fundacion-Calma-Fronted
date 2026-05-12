@@ -51,6 +51,18 @@ export class RepositorioService {
     return this.http.post(this.apiUrl, formData);
   }
 
+  agregarEnlace(
+    bloqueId: number,
+    nombre: string,
+    url: string,
+  ): Observable<Documento> {
+    return this.http.post<Documento>(`${this.apiUrl}/enlace`, {
+      bloqueId,
+      nombre,
+      url,
+    });
+  }
+
   subirDocumento(
     bloqueId: number,
     archivo: File

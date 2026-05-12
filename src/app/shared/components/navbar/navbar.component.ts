@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { interval, Subscription } from 'rxjs';
+import { Router } from '@angular/router';
 
 import { AuthService } from '../../../modules/auth/services/auth.service';
 import {
@@ -30,10 +31,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   private authService = inject(AuthService);
   private notifService = inject(NotificacionesService);
+  private router = inject(Router);
 
   nombreUsuario = signal<string>('Usuario');
   rolUsuario = signal<string>('Rol Desconocido');
   inicialesUsuario = signal<string>('U');
+  fotoUsuario = signal<string | null>(null);
 
   notificaciones = signal<Notificacion[]>([]);
   mostrarDropdown = signal(false);
@@ -67,6 +70,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
       this.nombreUsuario.set(nombreCompleto);
       this.rolUsuario.set(user.rol || 'Usuario');
+      this.fotoUsuario.set(this.normalizarArchivoUrl(user.foto_url ?? user.fotoUrl ?? null));
 
       let iniciales = nombreCompleto.charAt(0).toUpperCase();
 
@@ -81,6 +85,18 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
       this.inicialesUsuario.set(iniciales);
     }
+  }
+
+  private normalizarArchivoUrl(url: string | null | undefined): string | null {
+    if (!url) {
+      return null;
+    }
+
+    if (/^https?:\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) {
+      return url;
+    }
+
+    return `http://localhost:3005${url.startsWith('/') ? url : `/${url}`}`;
   }
 
   cargarNotificaciones() {
@@ -136,9 +152,33 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
     return n.mensaje
       .split('\n')
-      .filter((linea) => !this.esLineaFirma(linea) && !this.esLineaEnlace(linea))
+      .filter((linea) =>
+        !this.esLineaFirma(linea)
+        && !this.esLineaEnlace(linea)
+        && !this.esLineaSistema(linea)
+        && !this.esLineaCambios(linea)
+      )
       .join('\n')
       .trim();
+  }
+
+  cambiosSistema(n: Notificacion | null): string[] {
+    if (!this.esSistema(n) || !n?.mensaje) {
+      return [];
+    }
+
+    const lineas = n.mensaje.split('\n').map((linea) => linea.trim());
+    const indice = lineas.findIndex((linea) => /^Cambios realizados:\s*$/i.test(linea));
+
+    if (indice === -1) {
+      return [];
+    }
+
+    return lineas
+      .slice(indice + 1)
+      .filter((linea) => linea.startsWith('- '))
+      .map((linea) => linea.replace(/^-\s*/, '').trim())
+      .filter(Boolean);
   }
 
   resumenMensaje(n: Notificacion): string {
@@ -161,6 +201,62 @@ export class NavbarComponent implements OnInit, OnDestroy {
     return n.tipo === 'sistema' ? 'Sistema' : 'Comunicado';
   }
 
+  esSistema(n: Notificacion | null): boolean {
+    return n?.tipo === 'sistema';
+  }
+
+  apartadoSistema(n: Notificacion | null): string {
+    const apartado = this.valorSistema(n, 'Apartado');
+
+    if (apartado) {
+      return apartado;
+    }
+
+    const texto = `${n?.titulo ?? ''} ${n?.mensaje ?? ''}`.toLowerCase();
+
+    if (texto.includes('convenio')) return 'Convenios';
+    if (texto.includes('actividad') || texto.includes('tarea')) return 'Actividades';
+    if (texto.includes('archivo') || texto.includes('documento') || texto.includes('repositorio')) return 'Repositorio';
+
+    return 'Sistema';
+  }
+
+  accionSistema(n: Notificacion | null): string {
+    return this.valorSistema(n, 'Accion') ?? this.inferirAccionSistema(n);
+  }
+
+  usuarioSistema(n: Notificacion | null): string | null {
+    return this.valorSistema(n, 'Usuario');
+  }
+
+  origenSistema(n: Notificacion | null): string {
+    return this.valorSistema(n, 'Origen') ?? 'Accion del sistema';
+  }
+
+  rutaSistema(n: Notificacion | null): string | null {
+    return this.valorSistema(n, 'Ruta') ?? this.inferirRutaSistema(n);
+  }
+
+  textoBotonSistema(n: Notificacion | null): string {
+    const apartado = this.apartadoSistema(n);
+    return apartado && apartado !== 'Sistema' ? `Ir a ${apartado}` : 'Ir al apartado';
+  }
+
+  navegarSistema(n: Notificacion | null): void {
+    const ruta = this.rutaSistema(n);
+
+    if (!ruta) {
+      return;
+    }
+
+    this.cerrarDetalleNotificacion();
+    void this.router.navigateByUrl(ruta);
+  }
+
+  irAPerfil(): void {
+    void this.router.navigateByUrl('/perfil');
+  }
+
   private obtenerLinea(
     n: Notificacion | null,
     predicate: (linea: string) => boolean,
@@ -174,6 +270,59 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   private esLineaEnlace(linea: string): boolean {
     return /^Enlace:\s*/i.test(linea.trim());
+  }
+
+  private esLineaSistema(linea: string): boolean {
+    return /^(Apartado|Accion|Ruta|Usuario|Origen):\s*/i.test(linea.trim());
+  }
+
+  private esLineaCambios(linea: string): boolean {
+    const value = linea.trim();
+    return /^Cambios realizados:\s*$/i.test(value) || /^-\s+/.test(value);
+  }
+
+  private valorSistema(n: Notificacion | null, clave: string): string | null {
+    const linea = this.obtenerLinea(n, (value) =>
+      new RegExp(`^${clave}:\\s*`, 'i').test(value),
+    );
+
+    return linea ? linea.replace(new RegExp(`^${clave}:\\s*`, 'i'), '').trim() : null;
+  }
+
+  private inferirAccionSistema(n: Notificacion | null): string {
+    const texto = `${n?.titulo ?? ''} ${n?.mensaje ?? ''}`.toLowerCase();
+
+    if (texto.includes('elimin')) return 'Eliminacion';
+    if (texto.includes('agreg') || texto.includes('cre')) return 'Creacion';
+    if (texto.includes('venc')) return 'Aviso automatico';
+
+    return 'Evento del sistema';
+  }
+
+  private inferirRutaSistema(n: Notificacion | null): string | null {
+    const apartado = this.apartadoSistema(n).toLowerCase();
+
+    if (apartado.includes('convenio') || apartado.includes('desarrollo')) {
+      return '/dashboard/director-dashboard/desarrollo-comercial';
+    }
+
+    if (apartado.includes('estrategia')) {
+      return '/dashboard/director-dashboard/estrategia-comercial';
+    }
+
+    if (apartado.includes('analisis') || apartado.includes('análisis')) {
+      return '/dashboard/director-dashboard/analisis-datos';
+    }
+
+    if (apartado.includes('repositorio')) {
+      return '/repositorio';
+    }
+
+    if (apartado.includes('usuario')) {
+      return '/dashboard/admin-dashboard/usuarios';
+    }
+
+    return null;
   }
 
   @HostListener('document:click', ['$event'])

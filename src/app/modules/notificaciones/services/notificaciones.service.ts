@@ -11,6 +11,8 @@ export interface Notificacion {
   mensaje: string;
   tipo: TipoNotificacion;
   leido: boolean;
+  favorito?: boolean;
+  archivado?: boolean;
   creado_at?: Date | string;
   imagen?: string | null;
 }
@@ -48,7 +50,9 @@ export class NotificacionesService {
   }
 
   crear(data: FormData) {
-    return this.http.post<Notificacion>(this.apiUrl, data);
+    return this.http.post<Notificacion>(this.apiUrl, data, {
+      headers: this.authService.getAuthHeadersWithoutContentType(),
+    });
   }
 
   marcarLeido(id: number, leido: boolean) {
@@ -59,8 +63,26 @@ export class NotificacionesService {
     );
   }
 
+  marcarFavorito(id: number, favorito: boolean) {
+    return this.http.patch<Notificacion>(
+      `${this.apiUrl}/${id}/favorito`,
+      { favorito, usuarioId: this.usuarioId() },
+      { params: this.usuarioParams() },
+    );
+  }
+
+  archivar(id: number, archivado: boolean) {
+    return this.http.patch<Notificacion>(
+      `${this.apiUrl}/${id}/archivado`,
+      { archivado, usuarioId: this.usuarioId() },
+      { params: this.usuarioParams() },
+    );
+  }
+
   eliminar(id: number) {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.delete(`${this.apiUrl}/${id}`, {
+      params: this.usuarioParams(),
+    });
   }
 
   notificarCambio(): void {

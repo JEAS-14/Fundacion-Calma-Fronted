@@ -119,6 +119,28 @@ export class Repositorio implements OnInit, OnDestroy {
     return 'web';
   }
 
+  etiquetaRedSocial(url: string): string {
+    const tipo = this.claseRedSocial(url);
+
+    if (tipo === 'facebook') {
+      return 'f';
+    }
+
+    if (tipo === 'instagram') {
+      return 'IG';
+    }
+
+    if (tipo === 'tiktok') {
+      return 'TK';
+    }
+
+    if (tipo === 'linkedin') {
+      return 'in';
+    }
+
+    return 'www';
+  }
+
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -168,34 +190,22 @@ export class Repositorio implements OnInit, OnDestroy {
       return;
     }
 
-    const url = this.nuevoLink.toLowerCase();
-    let icono = 'fa-globe';
+    const bloqueId = this.bloqueSeleccionado.id;
+    const nombre = this.nuevoNombre.trim() || 'Fundacion Calma';
+    const url = this.nuevoLink.trim();
 
-    if (url.includes('facebook')) {
-      icono = 'fa-facebook-f';
-    }
-
-    if (url.includes('instagram')) {
-      icono = 'fa-instagram';
-    }
-
-    if (url.includes('tiktok')) {
-      icono = 'fa-tiktok';
-    }
-
-    if (url.includes('linkedin')) {
-      icono = 'fa-linkedin-in';
-    }
-
-    this.bloqueSeleccionado.documentos.push({
-      nombre: this.nuevoNombre || 'Fundacion Calma',
-      url: this.nuevoLink,
-      icono,
+    this.repoService.agregarEnlace(bloqueId, nombre, url).subscribe({
+      next: () => {
+        this.nuevoNombre = '';
+        this.nuevoLink = '';
+        this.cargarBloques();
+        this.mostrarNotificacion('success', 'Red social agregada correctamente.');
+      },
+      error: (err) => {
+        console.error('Error al agregar red social:', err);
+        this.mostrarNotificacion('error', err?.error?.message || 'Error al agregar red social.');
+      },
     });
-
-    this.nuevoNombre = '';
-    this.nuevoLink = '';
-    this.mostrarNotificacion('success', 'Red social agregada correctamente.');
   }
 
   eliminarDocumento(index: number) {
