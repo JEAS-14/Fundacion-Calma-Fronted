@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { AuthService } from '../../auth/services/auth.service';
 
 export interface Documento {
   id?: number;
@@ -25,6 +26,7 @@ export interface Bloque {
 export class RepositorioService {
 
   private http = inject(HttpClient);
+  private authService = inject(AuthService);
 
   private apiUrl = 'http://localhost:3005/api/repositorio';
   private apiOrigin = this.apiUrl.replace(/\/api\/repositorio$/, '');
@@ -48,7 +50,9 @@ export class RepositorioService {
   }
 
   subirArchivo(formData: FormData): Observable<any> {
-    return this.http.post(this.apiUrl, formData);
+    return this.http.post(this.apiUrl, formData, {
+      headers: this.authService.getAuthHeadersWithoutContentType(),
+    });
   }
 
   agregarEnlace(
@@ -56,11 +60,15 @@ export class RepositorioService {
     nombre: string,
     url: string,
   ): Observable<Documento> {
-    return this.http.post<Documento>(`${this.apiUrl}/enlace`, {
-      bloqueId,
-      nombre,
-      url,
-    });
+    return this.http.post<Documento>(
+      `${this.apiUrl}/enlace`,
+      {
+        bloqueId,
+        nombre,
+        url,
+      },
+      { headers: this.authService.getAuthHeaders() },
+    );
   }
 
   subirDocumento(
@@ -82,7 +90,8 @@ export class RepositorioService {
 
   eliminar(id: number): Observable<void> {
     return this.http.delete<void>(
-      `${this.apiUrl}/${id}`
+      `${this.apiUrl}/${id}`,
+      { headers: this.authService.getAuthHeaders() },
     );
   }
 

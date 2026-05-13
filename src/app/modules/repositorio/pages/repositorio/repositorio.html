@@ -211,6 +211,7 @@
             </a>
 
             <button
+              *ngIf="puedeEliminarRepositorio"
               class="delete"
               type="button"
               (click)="eliminarRed(i)"
@@ -278,6 +279,7 @@
             </a>
 
             <button
+              *ngIf="puedeEliminarRepositorio"
               class="delete"
               type="button"
               (click)="eliminarDocumento(i)"

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../auth/services/auth.service';
 import { Bloque, RepositorioService } from '../../services/repositorio.service';
 
 type TipoToast = 'success' | 'error';
@@ -24,7 +25,14 @@ export class Repositorio implements OnInit, OnDestroy {
   nuevoNombre = '';
   nuevoLink = '';
 
-  constructor(private repoService: RepositorioService) {}
+  constructor(
+    private repoService: RepositorioService,
+    private authService: AuthService,
+  ) {}
+
+  get puedeEliminarRepositorio(): boolean {
+    return !this.authService.isPracticante();
+  }
 
   ngOnInit() {
     this.cargarBloques();
@@ -209,6 +217,11 @@ export class Repositorio implements OnInit, OnDestroy {
   }
 
   eliminarDocumento(index: number) {
+    if (!this.puedeEliminarRepositorio) {
+      this.mostrarNotificacion('error', 'Los practicantes no pueden eliminar archivos ni enlaces.');
+      return;
+    }
+
     if (!this.bloqueSeleccionado) {
       return;
     }
